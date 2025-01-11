@@ -1,16 +1,9 @@
 import { useInsertTemplate, useSelectTemplate, useUpdateTemplate } from "@src/db/templates";
-import { PoolClient } from "pg";
-import { ClientCompanyModel, ClientPersonModel } from "./domain/ClientEntity";
-import { ServiceProviderCompanyModel, ServiceProviderPersonModel } from "./domain/ServiceProviders";
 import { EntityClass, PrimaryType } from "@src/helpers/enums";
+import { PoolClient } from "pg";
+import { EntityModel } from "./domain/base/Entity";
 
-type EntityModel =
-    ReturnType<typeof ServiceProviderCompanyModel.prototype.getValues>
-    | ReturnType<typeof ServiceProviderPersonModel.prototype.getValues>
-    | ReturnType<typeof ClientCompanyModel.prototype.getValues>
-    | ReturnType<typeof ClientPersonModel.prototype.getValues>
-
-export const insertEntity = async <T>(data: EntityModel, options: { client: PoolClient }) => {
+export const insertEntity = async <M extends EntityModel>(data: M, options: { client: PoolClient }) => {
     const { client } = options;
     const { entityId, ...entityToCreate } = data;
     const { keys: columns, values } = useInsertTemplate(entityToCreate)
@@ -26,7 +19,7 @@ export const insertEntity = async <T>(data: EntityModel, options: { client: Pool
     return result.rows.map((row) => useSelectTemplate(row));
 }
 
-export const updateEntity = async <T>(data: EntityModel, options: { client: PoolClient }) => {
+export const updateEntity = async <M extends EntityModel>(data: M, options: { client: PoolClient }) => {
     const { client } = options;
     const { entityId, ...entityToUpdate } = data;
 
@@ -43,17 +36,14 @@ export const updateEntity = async <T>(data: EntityModel, options: { client: Pool
     return result.rows.map((row) => useSelectTemplate(row));
 }
 
-export const selectEntities = async <T>(
-    columns: string[],
-    options: {
-        client: PoolClient,
-        criteria: {
-            includeIds?: number[],
-            entityClass?: EntityClass,
-            entityTypePrimary?: PrimaryType,
-        },
-    }
-) => {
+export const selectEntities = async (columns: string[], options: {
+    client: PoolClient,
+    criteria: {
+        includeIds?: number[],
+        entityClass?: EntityClass,
+        entityTypePrimary?: PrimaryType,
+    },
+}) => {
     const { client, criteria } = options;
     const { includeIds, entityClass, entityTypePrimary } = criteria
 

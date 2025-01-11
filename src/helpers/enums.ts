@@ -23,8 +23,8 @@ export enum EntityClass {
 
 export enum PrimaryType {
     "EMPTY" = 0,
-    "COMPANY" = 2,
-    "PERSONAL" = 1,
+    "COMPANY" = 1,
+    "PERSONAL" = 2,
 };
 
 export enum SecondaryType {
