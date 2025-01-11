@@ -16,7 +16,7 @@ export class PersonModel {
             icType: z.nativeEnum(IcType),
             icNo: z.string().nullable().optional(),
         })
-        return schema.safeParse(dto).success;
+        return schema.safeParse(dto);
     }
 
     fromRecord<T extends PersonRecord>(target: T) {

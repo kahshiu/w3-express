@@ -3,6 +3,10 @@ import { CompanyModel, CompanyRecord } from "./base/Company"
 import { EntityModel, EntityRecord } from "./base/Entity"
 import { PersonModel, PersonRecord } from "./base/Person"
 import { ClientModel, ClientRecord } from "./base/Client"
+import { logger } from "@src/logger"
+
+export type TEntityModel = EntityModel & CompanyModel & PersonModel & ClientModel
+export type TEntityRecord = EntityRecord & CompanyRecord & PersonRecord & ClientRecord
 
 export class AbstractEntityModel {
     constructor(
@@ -14,18 +18,50 @@ export class AbstractEntityModel {
     ) { }
 
     validate(dto: unknown) {
-        const isValidEntity = this.entity? this.entity.validate(dto): true;
-        const isValidCompany = this.company? this.company.validate(dto): true;
-        const isValidPerson = this.person? this.person.validate(dto): true;
-        const isValidClient = this.client? this.client.validate(dto): true;
+        let isValidEntity = true;
+        let isValidCompany = true;
+        let isValidPerson = true;
+        let isValidClient = true;
+
+        if (this.entity) {
+            const vResult = this.entity.validate(dto);
+            isValidEntity = vResult.success;
+            if (!isValidEntity) {
+                logger.info(vResult.error, "entity validation failed")
+            }
+        }
+
+        if (this.company) {
+            const vResult = this.company.validate(dto);
+            isValidCompany = vResult.success;
+            if (!isValidCompany) {
+                logger.info(vResult.error, "company validation failed")
+            }
+        }
+
+        if (this.person) {
+            const vResult = this.person.validate(dto);
+            isValidPerson = vResult.success;
+            if (!isValidPerson) {
+                logger.info(vResult.error, "person validation failed")
+            }
+        }
+
+        if (this.client) {
+            const vResult = this.client.validate(dto);
+            isValidClient = vResult.success;
+            if (!isValidClient) {
+                logger.info(vResult.error, "client validation failed")
+            }
+        }
 
         const isValid = isValidEntity && isValidCompany && isValidPerson && isValidClient
-        if(!isValid) {
+        if (!isValid) {
             throw new Error("entity validation error")
         }
     }
 
-    fromRecord(record: EntityRecord & CompanyRecord & PersonRecord & ClientRecord) {
+    fromRecord(record: TEntityRecord) {
         if (this.entity) {
             this.entity.fromRecord(record);
             this.entity.entityId = record.entity_id
@@ -36,10 +72,10 @@ export class AbstractEntityModel {
         if (this.client) this.client.fromRecord(record);
     }
 
-    fromDto(dto: EntityModel & CompanyModel & PersonModel & ClientModel, entityId: number) {
+    fromDto(dto: TEntityModel, entityId: number) {
         if (this.entity) {
             this.entity.fromDto(dto);
-            this.entity.entityId = entityId
+            this.entity.entityId = entityId;
         }
         if (this.company) this.company.fromDto(dto);
         if (this.person) this.person.fromDto(dto);

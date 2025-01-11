@@ -18,7 +18,7 @@ export class ClientModel {
             incomeTaxBranch: z.string().nullable().optional(),
             profileStatus: z.nativeEnum(ProfileStatus),
         })
-        return schema.safeParse(dto).success;
+        return schema.safeParse(dto);
     }
 
     fromRecord<T extends ClientRecord>(target: T) {

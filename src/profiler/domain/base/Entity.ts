@@ -28,7 +28,7 @@ export class EntityModel {
             entityTypeSecondary: z.nativeEnum(SecondaryType).optional(),
             entityStatus: z.nativeEnum(EntityStatus),
         })
-        return schema.safeParse(dto).success;
+        return schema.safeParse(dto);
     }
 
     // converters 

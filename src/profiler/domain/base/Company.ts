@@ -37,7 +37,7 @@ export class CompanyModel {
             directorName: z.string().nullable().optional(),
             directorPassword: z.string().nullable().optional(),
         })
-        return schema.safeParse(dto).success;
+        return schema.safeParse(dto);
     }
 
     // converters 
