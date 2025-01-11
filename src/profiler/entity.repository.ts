@@ -2,6 +2,8 @@ import { useInsertTemplate, useSelectTemplate, useUpdateTemplate } from "@src/db
 import { EntityClass, PrimaryType } from "@src/helpers/enums";
 import { PoolClient } from "pg";
 import { EntityModel } from "./domain/base/Entity";
+import { omit } from "es-toolkit";
+import { logger } from "@src/logger";
 
 export const insertEntity = async <M extends EntityModel>(data: M, options: { client: PoolClient }) => {
     const { client } = options;
@@ -16,22 +18,22 @@ export const insertEntity = async <M extends EntityModel>(data: M, options: { cl
             ${valuesJoined}
         ) returning entity_id, ${columnsJoined}`
     )
+
+    logger.info(entityToCreate, "tracing sql: insert entity")
     return result.rows.map((row) => useSelectTemplate(row));
 }
 
-export const updateEntity = async <M extends EntityModel>(data: M, options: { 
+export const updateEntity = async <M extends EntityModel>(data: M, options: {
     client: PoolClient,
     criteria: {
-        includeIds?: number[],
+        entityId?: number,
         entityClass?: EntityClass,
         entityTypePrimary?: PrimaryType,
     },
 }) => {
-    const { client } = options;
-    const { entityId, entityClass, entityTypePrimary, ...entityToUpdate } = data;
-
+    const { client, criteria: { entityId, entityClass, entityTypePrimary } } = options;
+    const entityToUpdate = omit(data, ["entityId", "entityClass", "entityTypePrimary"]);
     const updateCols = useUpdateTemplate(entityToUpdate)
-    const { keys: columns } = useInsertTemplate(entityToUpdate)
 
     const whereArr: string[] = [];
     if (entityId && entityId > 0) {
@@ -44,6 +46,8 @@ export const updateEntity = async <M extends EntityModel>(data: M, options: {
         whereArr.push(`entity_type_primary = ${entityTypePrimary}`)
     }
     const whereClause = whereArr.length > 0 ? `where ${whereArr.join(" and ")}` : "";
+
+    const { keys: columns } = useInsertTemplate(entityToUpdate)
     const columnsJoined = columns.join(",")
 
     const result = await client.query(
@@ -52,6 +56,7 @@ export const updateEntity = async <M extends EntityModel>(data: M, options: {
         ${whereClause}
         returning entity_id, ${columnsJoined}`
     )
+    logger.info({ updateCols, whereClause }, "tracing sql: update entity")
     return result.rows.map((row) => useSelectTemplate(row));
 }
 

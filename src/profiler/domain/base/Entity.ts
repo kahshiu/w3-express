@@ -23,8 +23,8 @@ export class EntityModel {
         const schema = z.object({
             entityId: z.number().optional(),
             entityName: z.string(),
-            // entityClass: z.nativeEnum(EntityClass),
-            // entityTypePrimary: z.nativeEnum(PrimaryType),
+            // entityClass, applied internally 
+            // entityTypePrimary: applied internally
             entityTypeSecondary: z.nativeEnum(SecondaryType).optional(),
             entityStatus: z.nativeEnum(EntityStatus),
         })
@@ -35,12 +35,14 @@ export class EntityModel {
     fromRecord<T extends EntityRecord>(target: T) {
         this.entityId = target?.entity_id ?? 0
         this.entityName = target.entity_name
+        this.entityTypeSecondary = target.entity_type_secondary
         this.entityStatus = target.entity_status
     }
 
     fromDto<T extends EntityModel>(target: T) {
         this.entityId = target?.entityId ?? 0
         this.entityName = target.entityName
+        this.entityTypeSecondary = target.entityTypeSecondary
         this.entityStatus = target.entityStatus
     }
 }
