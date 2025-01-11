@@ -14,9 +14,9 @@ export class ClientModel {
 
     validate(dto: unknown) {
         const schema = z.object({
-            income_tax_no: z.string().optional().nullable(),
-            income_tax_branch: z.string().optional().nullable(),
-            profile_status: z.nativeEnum(ProfileStatus),
+            incomeTaxNo: z.string().nullable().optional(),
+            incomeTaxBranch: z.string().nullable().optional(),
+            profileStatus: z.nativeEnum(ProfileStatus),
         })
         return schema.safeParse(dto).success;
     }

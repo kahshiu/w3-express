@@ -41,3 +41,9 @@ export enum EntityStatus {
     "DORMANT" = 101,
     "STRIKE_OFF" = 102,
 };
+
+export enum IcType {
+    "EMPTY" = 0,
+    "NEW_IC" = 1,
+    "OLD_IC" = 2,
+};

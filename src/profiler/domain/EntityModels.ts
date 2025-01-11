@@ -13,6 +13,18 @@ export class AbstractEntityModel {
         public client: ClientModel | null,
     ) { }
 
+    validate(dto: unknown) {
+        const isValidEntity = this.entity? this.entity.validate(dto): true;
+        const isValidCompany = this.company? this.company.validate(dto): true;
+        const isValidPerson = this.person? this.person.validate(dto): true;
+        const isValidClient = this.client? this.client.validate(dto): true;
+
+        const isValid = isValidEntity && isValidCompany && isValidPerson && isValidClient
+        if(!isValid) {
+            throw new Error("entity validation error")
+        }
+    }
+
     fromRecord(record: EntityRecord & CompanyRecord & PersonRecord & ClientRecord) {
         if (this.entity) {
             this.entity.fromRecord(record);

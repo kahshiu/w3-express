@@ -1,5 +1,6 @@
 import { Constants } from "@src/helpers/constants"
 import { EntityClass, PrimaryType, SecondaryType } from "@src/helpers/enums"
+import { z } from "zod";
 
 export class EntityRecord {
     entity_id: number = Constants.EMPTY_NUMBER
@@ -15,6 +16,17 @@ export class EntityModel {
     entityClass: EntityClass = EntityClass.EMPTY
     entityTypePrimary: PrimaryType = PrimaryType.EMPTY
     entityTypeSecondary: SecondaryType = SecondaryType.EMPTY
+
+    validate(dto: unknown) {
+        const schema = z.object({
+            entityId: z.number().optional(),
+            entityName: z.string(),
+            entityClass: z.nativeEnum(EntityClass),
+            entityTypePrimary: z.nativeEnum(PrimaryType),
+            entityTypeSecondary: z.nativeEnum(SecondaryType),
+        })
+        return schema.safeParse(dto).success;
+    }
 
     // converters 
     fromRecord<T extends EntityRecord>(target: T) {
