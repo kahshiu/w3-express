@@ -23,8 +23,8 @@ export enum EntityClass {
 
 export enum PrimaryType {
     "EMPTY" = 0,
-    "COMPANY" = 2,
-    "PERSONAL" = 1,
+    "COMPANY" = 1,
+    "PERSONAL" = 2,
 };
 
 export enum SecondaryType {
@@ -40,4 +40,10 @@ export enum EntityStatus {
     "ACTIVE" = 11,
     "DORMANT" = 101,
     "STRIKE_OFF" = 102,
+};
+
+export enum IcType {
+    "EMPTY" = 0,
+    "NEW_IC" = 1,
+    "OLD_IC" = 2,
 };

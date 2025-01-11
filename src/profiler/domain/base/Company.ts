@@ -1,5 +1,6 @@
 import { Constants } from "@src/helpers/constants"
 import { NullableString, NullableDate, NullableNumber } from "@src/helpers/interfaces"
+import { z } from "zod";
 
 export class CompanyRecord {
     co_reg_no_old: NullableString = null
@@ -23,6 +24,21 @@ export class CompanyModel {
     arDueMonth: NullableNumber = null
     directorName: NullableString = null
     directorPassword: NullableString = null
+    
+    validate(dto: unknown) {
+        const schema = z.object({
+            coRegNoOld: z.string().nullable().optional(),
+            coRegNoNew: z.string().nullable().optional(),
+            employerNo: z.string().nullable().optional(),
+            dateIncorp: z.string().datetime().nullable().optional(),
+            dateCommence: z.string().datetime().nullable().optional(),
+            yearEndMonth: z.number().nullable().optional(),
+            arDueMonth: z.number().nullable().optional(),
+            directorName: z.string().nullable().optional(),
+            directorPassword: z.string().nullable().optional(),
+        })
+        return schema.safeParse(dto);
+    }
 
     // converters 
     fromRecord<T extends CompanyRecord>(record: T) {

@@ -1,4 +1,6 @@
+import { IcType } from "@src/helpers/enums";
 import { NullableNumber, NullableString } from "@src/helpers/interfaces"
+import { z } from "zod";
 
 export class PersonRecord {
     ic_type: NullableNumber = null
@@ -8,6 +10,14 @@ export class PersonRecord {
 export class PersonModel {
     icType: NullableNumber = null
     icNo: NullableString = null
+
+    validate(dto: unknown) {
+        const schema = z.object({
+            icType: z.nativeEnum(IcType),
+            icNo: z.string().nullable().optional(),
+        })
+        return schema.safeParse(dto);
+    }
 
     fromRecord<T extends PersonRecord>(target: T) {
         this.icType = target.ic_type;

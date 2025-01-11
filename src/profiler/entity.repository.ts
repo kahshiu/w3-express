@@ -1,16 +1,11 @@
 import { useInsertTemplate, useSelectTemplate, useUpdateTemplate } from "@src/db/templates";
-import { PoolClient } from "pg";
-import { ClientCompanyModel, ClientPersonModel } from "./domain/ClientEntity";
-import { ServiceProviderCompanyModel, ServiceProviderPersonModel } from "./domain/ServiceProviders";
 import { EntityClass, PrimaryType } from "@src/helpers/enums";
+import { PoolClient } from "pg";
+import { EntityModel } from "./domain/base/Entity";
+import { omit } from "es-toolkit";
+import { logger } from "@src/logger";
 
-type EntityModel =
-    ReturnType<typeof ServiceProviderCompanyModel.prototype.getValues>
-    | ReturnType<typeof ServiceProviderPersonModel.prototype.getValues>
-    | ReturnType<typeof ClientCompanyModel.prototype.getValues>
-    | ReturnType<typeof ClientPersonModel.prototype.getValues>
-
-export const insertEntity = async <T>(data: EntityModel, options: { client: PoolClient }) => {
+export const insertEntity = async <M extends EntityModel>(data: M, options: { client: PoolClient }) => {
     const { client } = options;
     const { entityId, ...entityToCreate } = data;
     const { keys: columns, values } = useInsertTemplate(entityToCreate)
@@ -23,37 +18,56 @@ export const insertEntity = async <T>(data: EntityModel, options: { client: Pool
             ${valuesJoined}
         ) returning entity_id, ${columnsJoined}`
     )
+
+    logger.info(entityToCreate, "tracing sql: insert entity")
     return result.rows.map((row) => useSelectTemplate(row));
 }
 
-export const updateEntity = async <T>(data: EntityModel, options: { client: PoolClient }) => {
-    const { client } = options;
-    const { entityId, ...entityToUpdate } = data;
-
+export const updateEntity = async <M extends EntityModel>(data: M, options: {
+    client: PoolClient,
+    criteria: {
+        entityId?: number,
+        entityClass?: EntityClass,
+        entityTypePrimary?: PrimaryType,
+    },
+}) => {
+    const { client, criteria: { entityId, entityClass, entityTypePrimary } } = options;
+    const entityToUpdate = omit(data, ["entityId", "entityClass", "entityTypePrimary"]);
     const updateCols = useUpdateTemplate(entityToUpdate)
+
+    const whereArr: string[] = [];
+    if (entityId && entityId > 0) {
+        whereArr.push(`entity_id = ${entityId}`)
+    }
+    if (entityClass) {
+        whereArr.push(`entity_class = ${entityClass}`)
+    }
+    if (entityTypePrimary) {
+        whereArr.push(`entity_type_primary = ${entityTypePrimary}`)
+    }
+    const whereClause = whereArr.length > 0 ? `where ${whereArr.join(" and ")}` : "";
+
     const { keys: columns } = useInsertTemplate(entityToUpdate)
     const columnsJoined = columns.join(",")
 
     const result = await client.query(
         `update my_way2.entity set
             ${updateCols.join(",")}
-        where entity_id = ${entityId}
+        ${whereClause}
         returning entity_id, ${columnsJoined}`
     )
+    logger.info({ updateCols, whereClause }, "tracing sql: update entity")
     return result.rows.map((row) => useSelectTemplate(row));
 }
 
-export const selectEntities = async <T>(
-    columns: string[],
-    options: {
-        client: PoolClient,
-        criteria: {
-            includeIds?: number[],
-            entityClass?: EntityClass,
-            entityTypePrimary?: PrimaryType,
-        },
-    }
-) => {
+export const selectEntities = async (columns: string[], options: {
+    client: PoolClient,
+    criteria: {
+        includeIds?: number[],
+        entityClass?: EntityClass,
+        entityTypePrimary?: PrimaryType,
+    },
+}) => {
     const { client, criteria } = options;
     const { includeIds, entityClass, entityTypePrimary } = criteria
 

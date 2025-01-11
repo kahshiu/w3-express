@@ -1,5 +1,6 @@
 import { Constants } from "@src/helpers/constants"
-import { EntityClass, PrimaryType, SecondaryType } from "@src/helpers/enums"
+import { EntityClass, EntityStatus, PrimaryType, SecondaryType } from "@src/helpers/enums"
+import { z } from "zod";
 
 export class EntityRecord {
     entity_id: number = Constants.EMPTY_NUMBER
@@ -7,6 +8,7 @@ export class EntityRecord {
     entity_class: number = EntityClass.EMPTY
     entity_type_primary: number = PrimaryType.EMPTY
     entity_type_secondary: number = SecondaryType.EMPTY
+    entity_status: EntityStatus = EntityStatus.EMPTY
 }
 
 export class EntityModel {
@@ -15,15 +17,32 @@ export class EntityModel {
     entityClass: EntityClass = EntityClass.EMPTY
     entityTypePrimary: PrimaryType = PrimaryType.EMPTY
     entityTypeSecondary: SecondaryType = SecondaryType.EMPTY
+    entityStatus: EntityStatus = EntityStatus.EMPTY
+
+    validate(dto: unknown) {
+        const schema = z.object({
+            entityId: z.number().optional(),
+            entityName: z.string(),
+            // entityClass, applied internally 
+            // entityTypePrimary: applied internally
+            entityTypeSecondary: z.nativeEnum(SecondaryType).optional(),
+            entityStatus: z.nativeEnum(EntityStatus),
+        })
+        return schema.safeParse(dto);
+    }
 
     // converters 
     fromRecord<T extends EntityRecord>(target: T) {
         this.entityId = target?.entity_id ?? 0
         this.entityName = target.entity_name
+        this.entityTypeSecondary = target.entity_type_secondary
+        this.entityStatus = target.entity_status
     }
 
     fromDto<T extends EntityModel>(target: T) {
         this.entityId = target?.entityId ?? 0
         this.entityName = target.entityName
+        this.entityTypeSecondary = target.entityTypeSecondary
+        this.entityStatus = target.entityStatus
     }
 }
