@@ -19,18 +19,37 @@ export const insertEntity = async <M extends EntityModel>(data: M, options: { cl
     return result.rows.map((row) => useSelectTemplate(row));
 }
 
-export const updateEntity = async <M extends EntityModel>(data: M, options: { client: PoolClient }) => {
+export const updateEntity = async <M extends EntityModel>(data: M, options: { 
+    client: PoolClient,
+    criteria: {
+        includeIds?: number[],
+        entityClass?: EntityClass,
+        entityTypePrimary?: PrimaryType,
+    },
+}) => {
     const { client } = options;
-    const { entityId, ...entityToUpdate } = data;
+    const { entityId, entityClass, entityTypePrimary, ...entityToUpdate } = data;
 
     const updateCols = useUpdateTemplate(entityToUpdate)
     const { keys: columns } = useInsertTemplate(entityToUpdate)
+
+    const whereArr: string[] = [];
+    if (entityId && entityId > 0) {
+        whereArr.push(`entity_id = ${entityId}`)
+    }
+    if (entityClass) {
+        whereArr.push(`entity_class = ${entityClass}`)
+    }
+    if (entityTypePrimary) {
+        whereArr.push(`entity_type_primary = ${entityTypePrimary}`)
+    }
+    const whereClause = whereArr.length > 0 ? `where ${whereArr.join(" and ")}` : "";
     const columnsJoined = columns.join(",")
 
     const result = await client.query(
         `update my_way2.entity set
             ${updateCols.join(",")}
-        where entity_id = ${entityId}
+        ${whereClause}
         returning entity_id, ${columnsJoined}`
     )
     return result.rows.map((row) => useSelectTemplate(row));
