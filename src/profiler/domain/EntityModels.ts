@@ -4,6 +4,7 @@ import { EntityModel, EntityRecord } from "./base/Entity"
 import { PersonModel, PersonRecord } from "./base/Person"
 import { ClientModel, ClientRecord } from "./base/Client"
 import { logger } from "@src/logger"
+import { HttpBadRequest } from "@src/errors/HttpError"
 
 export type TEntityModel = EntityModel & CompanyModel & PersonModel & ClientModel
 export type TEntityRecord = EntityRecord & CompanyRecord & PersonRecord & ClientRecord
@@ -57,7 +58,7 @@ export class AbstractEntityModel {
 
         const isValid = isValidEntity && isValidCompany && isValidPerson && isValidClient
         if (!isValid) {
-            throw new Error("entity validation error")
+            throw new HttpBadRequest("entity validation error")
         }
     }
 
