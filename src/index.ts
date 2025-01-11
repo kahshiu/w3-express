@@ -1,6 +1,6 @@
-import express, { Router, type ErrorRequestHandler, type RequestHandler } from "express";
+import express, { Router } from "express";
 import { registerRoutes } from "./routes";
-import { HttpError } from "./errors/HttpError";
+import { errorHandler, healthCheckHandler } from "./helpers/middlewares";
 
 const apiConfig = {
     PORT_NUMBER: 3000
@@ -8,22 +8,6 @@ const apiConfig = {
 
 const router = Router();
 registerRoutes(router);
-
-const healthCheckHandler: RequestHandler = (req, resp, next) => {
-    const diagnostics = {
-        commit: "test",
-        environment: "development",
-    };
-    resp.json(diagnostics);
-}
-
-const errorHandler: ErrorRequestHandler = (err, req, resp, next) => {
-    const error = err as HttpError
-    const { details } = error;
-    resp.statusCode = details.statusCode;
-    resp.statusMessage = details.statusMessage;
-    resp.json({ message: err.message });
-}
 
 const server = express();
 // server.use(cors());

@@ -1,20 +1,10 @@
 import { wrapTask } from "@src/db/PgHelpers"
+import { wrapCatcher } from "@src/helpers/middlewares";
 import { EntityModelManager, TEntityModel } from "./domain/EntityModels";
 import { getEntities } from "./entity.service"
 import { insertEntity, updateEntity } from "./entity.repository";
 import { RequestHandler, Router } from "express"
 import { EntityClass, EntityType, PrimaryType } from "@src/helpers/enums";
-
-const wrapCatcher = (fn: RequestHandler) => {
-    const errorCatcher: RequestHandler = async (req, resp, next) => {
-        try {
-            await fn(req, resp, next);
-        } catch (error) {
-            next(error)
-        }
-    }
-    return errorCatcher;
-}
 
 export const registerProfiler = (router: Router) => {
     router.get("/entities", wrapCatcher(getEntitiesRoute));
