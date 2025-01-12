@@ -40,19 +40,6 @@ export class CompanyModel {
         return schema.safeParse(dto);
     }
 
-    // converters 
-    fromRecord<T extends CompanyRecord>(record: T) {
-        this.coRegNoOld = record.co_reg_no_old
-        this.coRegNoNew = record.co_reg_no_new
-        this.employerNo = record.employer_no
-        this.dateIncorp = record.date_incorp
-        this.dateCommence = record.date_commence
-        this.yearEndMonth = record.year_end_month
-        this.arDueMonth = record.ar_due_month
-        this.directorName = record.director_name
-        this.directorPassword = record.director_password
-    }
-
     fromDto<T extends CompanyModel>(dto: T) {
         this.coRegNoOld = dto.coRegNoOld
         this.coRegNoNew = dto.coRegNoNew

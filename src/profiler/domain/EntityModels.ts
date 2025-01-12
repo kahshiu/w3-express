@@ -62,17 +62,6 @@ export class AbstractEntityModel {
         }
     }
 
-    fromRecord(record: TEntityRecord) {
-        if (this.entity) {
-            this.entity.fromRecord(record);
-            this.entity.entityId = record.entity_id
-            this.entity.entityTypeSecondary = record.entity_type_secondary
-        }
-        if (this.person) this.person.fromRecord(record);
-        if (this.company) this.company.fromRecord(record);
-        if (this.client) this.client.fromRecord(record);
-    }
-
     fromDto(dto: TEntityModel, entityId: number) {
         if (this.entity) {
             this.entity.fromDto(dto);

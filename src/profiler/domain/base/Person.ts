@@ -19,11 +19,6 @@ export class PersonModel {
         return schema.safeParse(dto);
     }
 
-    fromRecord<T extends PersonRecord>(target: T) {
-        this.icType = target.ic_type;
-        this.icNo = target.ic_no;
-    }
-
     fromDto<T extends PersonModel>(target: T) {
         this.icType = target.icType;
         this.icNo = target.icNo;

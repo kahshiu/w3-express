@@ -21,12 +21,6 @@ export class ClientModel {
         return schema.safeParse(dto);
     }
 
-    fromRecord<T extends ClientRecord>(target: T) {
-        this.incomeTaxNo = target.income_tax_no;
-        this.incomeTaxBranch = target.income_tax_branch;
-        this.profileStatus = target.profile_status;
-    }
-
     fromDto<T extends ClientModel>(target: T) {
         this.incomeTaxNo = target.incomeTaxNo;
         this.incomeTaxBranch = target.incomeTaxBranch;
