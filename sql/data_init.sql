@@ -1,5 +1,15 @@
-
 -- database 
+insert into my_way2.relation_types (
+    relation_id,
+    relation_name,
+    relation_description
+) values (
+    1,
+    'employer-employee',
+    'parent is company, child is staff'
+);
+
+
 insert into my_way2.entity (
     entity_name, 
     entity_class, 
