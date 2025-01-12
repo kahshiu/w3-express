@@ -1,4 +1,4 @@
-import { useInsertTemplate } from "@src/db/templates";
+import { getTemplateFragments } from "@src/db/templates";
 import { EntityType } from "@src/helpers/enums";
 import { PoolClient } from "pg";
 import { EntityModelManager } from "./domain/EntityModels";
@@ -7,7 +7,9 @@ import { selectEntities } from "./entity.repository";
 const getEntity = async (entityType: EntityType, options: { client: PoolClient, criteria: { includeIds: number[] } }) => {
     const { client, criteria: { includeIds } } = options;
     const { instance } = new EntityModelManager(entityType);
-    const { keys: columns } = useInsertTemplate(instance.getValues());
+
+    const frags = getTemplateFragments(instance.getValues());
+    const columns = frags.map(({ column }) => column)
 
     return selectEntities(columns, {
         client,

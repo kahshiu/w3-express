@@ -27,7 +27,8 @@ export const adaptColumnValue = (value: any) => {
 
 export const fromModelToRecord = (key: string, value: any) => {
     const processedKey = renameColumn(key);
-    const processedValue = adaptColumnValue(transformColumnValue(value))
+    // const processedValue = adaptColumnValue(transformColumnValue(value))
+    const processedValue = transformColumnValue(value);
     return {
         k: processedKey,
         v: processedValue,
@@ -43,25 +44,26 @@ export const fromRecordToModel = (key: string, value: any) => {
 }
 
 // SECTION: sql template handlers 
-export const useInsertTemplate = (data: any) => {
-    const keys: string[] = [];
-    const values: string[] = [];
+export const getTemplateFragments = (data: any, options: { indexStart: number } = { indexStart: 1 }) => {
+    const { indexStart } = options;
+    const result = [];
+    let index = indexStart ?? 1;
 
     const filteredData = omitBy(data, (key: string) => { return isUndefined(key) })
     for (const key in filteredData) {
         const { k, v } = fromModelToRecord(key, filteredData[key])
-        keys.push(k)
-        values.push(v)
+        result.push({
+            columnOrig: key,
+            valueOrig: filteredData[key],
+            column: k,
+            value: v,
+            placeholder: `$${index}`,
+            updatePlaceholder: `${k} = $${index}`,
+            updateExcludedColumn: `${k} = excluded.${k}`,
+        });
+        index++;
     }
-    return { keys, values }
-}
-
-export const useUpdateTemplate = (data: any) => {
-    const { keys, values } = useInsertTemplate(data);
-    return keys.map((key, i) => {
-        const value = values[i];
-        return `${key} = ${value}`
-    })
+    return result;
 }
 
 export const useSelectTemplate = (data: any) => {
