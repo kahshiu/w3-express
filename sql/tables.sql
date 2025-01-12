@@ -58,6 +58,7 @@ create table my_way2.entity_relations (
     child_id int,
     relation_id int,
     relation_attributes jsonb,
+    relation_status smallint,
 
     -- keys
     constraint pk_entity_relations primary key (parent_id, child_id),
