@@ -1,24 +1,10 @@
-import { getTemplateFragments } from "@src/db/templates";
 import { EntityType } from "@src/helpers/enums";
 import { PoolClient } from "pg";
-import { EntityModelManager } from "./domain/EntityModels";
 import { selectEntities } from "./entity.repository";
 
 const getEntity = async (entityType: EntityType, options: { client: PoolClient, criteria: { includeIds: number[] } }) => {
     const { client, criteria: { includeIds } } = options;
-    const { instance } = new EntityModelManager(entityType);
-
-    const frags = getTemplateFragments(instance.getValues());
-    const columns = frags.map(({ column }) => column)
-
-    return selectEntities(columns, {
-        client,
-        criteria: {
-            includeIds,
-            entityClass: instance.entity?.entityClass,
-            entityTypePrimary: instance.entity?.entityTypePrimary,
-        }
-    })
+    return selectEntities(entityType, { client, criteria: { includeIds } })
 }
 
 export const getEntities = async (options: { client: PoolClient, criteria: { includeIds: number[] } }) => {

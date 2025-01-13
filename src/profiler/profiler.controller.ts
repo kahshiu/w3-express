@@ -1,213 +1,74 @@
 import { wrapTask } from "@src/db/PgHelpers"
 import { wrapCatcher } from "@src/helpers/middlewares";
-import { EntityModelManager, TEntityModel } from "./domain/EntityModels";
+import { EntityModelManager } from "./domain/EntityModels";
 import { getEntities } from "./entity.service"
 import { insertEntity, updateEntity } from "./entity.repository";
 import { RequestHandler, Router } from "express"
 import { EntityClass, EntityType, PrimaryType } from "@src/helpers/enums";
+// import { upsertRelType } from "./relation_types.repository";
+import { RelationType } from "./domain/RelationType";
 
 export const registerProfiler = (router: Router) => {
     router.get("/entities", wrapCatcher(getEntitiesRoute));
     router.get("/entities/:ids", wrapCatcher(getEntitiesByIdRoute));
 
     // NOTE: creation
-    router.post("/master/company", wrapCatcher(createMasterCo));
-    router.post("/master/person", wrapCatcher(createMasterPerson));
-    router.post("/client/company", wrapCatcher(createClientCo));
-    router.post("/client/person", wrapCatcher(createClientPerson));
-    router.post("/service-provider/company", wrapCatcher(createSPCo));
-    router.post("/service-provider/person", wrapCatcher(createSPPerson));
+    router.post("/master/company", wrapCatcher(createEntityRoute(EntityType.MASTER_COMPANY)));
+    router.post("/master/person", wrapCatcher(createEntityRoute(EntityType.MASTER_PERSON)));
+    router.post("/client/company", wrapCatcher(createEntityRoute(EntityType.CLIENT_COMPANY)));
+    router.post("/client/person", wrapCatcher(createEntityRoute(EntityType.CLIENT_PERSON)));
+    router.post("/service-provider/company", wrapCatcher(createEntityRoute(EntityType.SERVICE_PROVIDER_COMPANY)));
+    router.post("/service-provider/person", wrapCatcher(createEntityRoute(EntityType.SERVICE_PROVIDER_PERSON)));
 
     // NOTE: patch 
-    router.patch("/master/company/:id", wrapCatcher(patchMasterCo));
-    router.patch("/master/person/:id", wrapCatcher(patchMasterPerson));
-    router.patch("/client/company/:id", wrapCatcher(patchClientCo));
-    router.patch("/client/person/:id", wrapCatcher(patchClientPerson));
-    router.patch("/service-provider/company/:id", wrapCatcher(patchSPCo));
-    router.patch("/service-provider/person/:id", wrapCatcher(patchSPPerson));
+    router.patch("/master/company/:id", wrapCatcher(patchEntityRoute(EntityType.MASTER_COMPANY)));
+    router.patch("/master/person/:id", wrapCatcher(patchEntityRoute(EntityType.MASTER_PERSON)));
+    router.patch("/client/company/:id", wrapCatcher(patchEntityRoute(EntityType.CLIENT_COMPANY)));
+    router.patch("/client/person/:id", wrapCatcher(patchEntityRoute(EntityType.CLIENT_PERSON)));
+    router.patch("/service-provider/company/:id", wrapCatcher(patchEntityRoute(EntityType.SERVICE_PROVIDER_COMPANY)));
+    router.patch("/service-provider/person/:id", wrapCatcher(patchEntityRoute(EntityType.SERVICE_PROVIDER_PERSON)));
 
     // NOTE: 
+    // router.post("/master/company/:parentId/employee-employer/:childId", upsertRelation);
+    // router.post("/relation-type", upsertRelationType);
+
     /*
-    router.post("/master/company/:id/employee", createMasterCo);
-    router.patch("/master/company/:id/employee/:id", patchMasterCo);
+    router.post("/client/company/:parentId/:relationType", createMasterCo);
+    router.patch("/client/company/:parentId/relation/:childId", patchMasterCo);
 
-    router.post("/client/company/:id/employee", createClientCo);
-    router.patch("/client/company/:id/employee/:id", patchClientCo);
-
-    router.post("/service-provider/company/:id/employee", createSPCo);
-    router.patch("/service-provider/company/:id/employee/:id", patchSPPerson);
+    router.post("/service-provider/company/:parentId/:relationType", createMasterCo);
+    router.patch("/service-provider/company/:parentId/relation/:childId", patchMasterCo);
     */
 }
 
 // SECTION: creation block
-const createEntityRoute = async (entityType: EntityType, data: TEntityModel, options: { opName: string }) => {
+const createEntityRoute = (entityType: EntityType): RequestHandler => async (req, resp, next) => {
+    const data = req.body;
     const { instance } = new EntityModelManager(entityType);
     instance.validate(data);
     instance.fromDto(data, 0);
 
-    const payload = await wrapTask(options.opName, (client) => {
-        return insertEntity(instance.getValues(), { client })
+    const payload = await wrapTask(`insert wrapper for ${entityType}`, (client) => {
+        return insertEntity(entityType, instance.getValues(), { client })
     })
 
-    return payload;
-}
-
-const createMasterCo: RequestHandler = async (req, resp, next) => {
-    const payload = await createEntityRoute(
-        EntityType.MASTER_COMPANY, req.body, { opName: "create master company" }
-    );
     resp.json({ payload });
 }
 
-const createMasterPerson: RequestHandler = async (req, resp, next) => {
-    const payload = await createEntityRoute(
-        EntityType.MASTER_PERSON, req.body, { opName: "create master person" }
-    );
-    resp.json({ payload });
-}
-
-const createClientCo: RequestHandler = async (req, resp, next) => {
-    const payload = await createEntityRoute(
-        EntityType.CLIENT_COMPANY, req.body, { opName: "create client company" }
-    );
-    resp.json({ payload });
-}
-
-const createClientPerson: RequestHandler = async (req, resp, next) => {
-    const payload = await createEntityRoute(
-        EntityType.CLIENT_PERSON, req.body, { opName: "create client person" }
-    );
-    resp.json({ payload });
-}
-
-const createSPCo: RequestHandler = async (req, resp, next) => {
-    const payload = await createEntityRoute(
-        EntityType.SERVICE_PROVIDER_COMPANY, req.body, { opName: "create sp company" }
-    );
-    resp.json({ payload });
-}
-
-const createSPPerson: RequestHandler = async (req, resp, next) => {
-    const payload = await createEntityRoute(
-        EntityType.SERVICE_PROVIDER_PERSON, req.body, { opName: "create sp person" }
-    );
-    resp.json({ payload });
-}
-
-// SECTION: update block
-const patchMasterCo: RequestHandler = async (req, resp, next) => {
+const patchEntityRoute = (entityType: EntityType): RequestHandler => async (req, resp, next) => {
     const { id } = req.params;
     const data = req.body;
-
-    const { instance } = new EntityModelManager(EntityType.MASTER_COMPANY);
     const entityId = Number(id);
-    instance.validate(data);
-    instance.fromDto(req.body, Number(id));
-
-    const payload = await wrapTask(`patch master company`, (client) => {
-        return updateEntity(instance.getValues(), {
-            client,
-            criteria: { entityId, entityClass: EntityClass.MASTER, entityTypePrimary: PrimaryType.COMPANY }
-        })
-    })
-
-    resp.json({ payload });
-}
-
-const patchMasterPerson: RequestHandler = async (req, resp, next) => {
-    const { id } = req.params;
-    const data = req.body;
-
-    const { instance } = new EntityModelManager(EntityType.MASTER_PERSON);
-    const entityId = Number(id);
-    instance.validate(data);
-    instance.fromDto(req.body, entityId);
-
-    const payload = await wrapTask(`patch master person`, (client) => {
-        return updateEntity(instance.getValues(), {
-            client,
-            criteria: { entityId, entityClass: EntityClass.MASTER, entityTypePrimary: PrimaryType.PERSONAL }
-        })
-    })
-
-    resp.json({ payload });
-}
-
-const patchClientCo: RequestHandler = async (req, resp, next) => {
-    const { id } = req.params;
-    const data = req.body;
-
-    const { instance } = new EntityModelManager(EntityType.CLIENT_COMPANY);
-    const entityId = Number(id);
-    instance.validate(data);
-    instance.fromDto(req.body, entityId);
-
-    const payload = await wrapTask(`patch client company`, (client) => {
-        return updateEntity(instance.getValues(), {
-            client,
-            criteria: { entityId, entityClass: EntityClass.CLIENT, entityTypePrimary: PrimaryType.COMPANY }
-        })
-    })
-
-    resp.json({ payload });
-}
-
-const patchClientPerson: RequestHandler = async (req, resp, next) => {
-    const { id } = req.params;
-    const data = req.body;
-
-    const { instance } = new EntityModelManager(EntityType.CLIENT_PERSON);
-    const entityId = Number(id);
-    instance.validate(data);
-    instance.fromDto(req.body, entityId);
-
-    const payload = await wrapTask(`patch service provider person`, (client) => {
-        return updateEntity(instance.getValues(), {
-            client,
-            criteria: { entityId, entityClass: EntityClass.CLIENT, entityTypePrimary: PrimaryType.PERSONAL }
-        })
-    })
-
-    resp.json({ payload });
-}
-
-const patchSPCo: RequestHandler = async (req, resp, next) => {
-    const { id } = req.params;
-    const data = req.body;
-
-    const { instance } = new EntityModelManager(EntityType.SERVICE_PROVIDER_COMPANY);
-    const entityId = Number(id);
-    instance.validate(data);
-    instance.fromDto(req.body, entityId);
-
-    const payload = await wrapTask(`patch service provider company`, (client) => {
-        return updateEntity(instance.getValues(), {
-            client,
-            criteria: { entityId, entityClass: EntityClass.SERVICE_PROVIDER, entityTypePrimary: PrimaryType.COMPANY }
-        })
-    })
-
-    resp.json({ payload });
-}
-
-const patchSPPerson: RequestHandler = async (req, resp, next) => {
-    const { id } = req.params;
-    const data = req.body;
 
     const { instance } = new EntityModelManager(EntityType.SERVICE_PROVIDER_PERSON);
-    const entityId = Number(id);
     instance.validate(data);
     instance.fromDto(req.body, entityId);
 
-    const payload = await wrapTask(`patch service provider person`, (client) => {
-        return updateEntity(instance.getValues(), {
-            client,
-            criteria: { entityId, entityClass: EntityClass.SERVICE_PROVIDER, entityTypePrimary: PrimaryType.PERSONAL }
-        })
+    const payload = await wrapTask(`patch wraper for ${entityType}`, (client) => {
+        return updateEntity(EntityType.SERVICE_PROVIDER_PERSON, data, { client, criteria: { entityId } })
     })
 
     resp.json({ payload });
-
 }
 
 const getEntitiesRoute: RequestHandler = async (req, resp, next) => {
@@ -226,3 +87,16 @@ const getEntitiesByIdRoute: RequestHandler = async (req, resp, next) => {
 
     resp.json({ payload });
 }
+
+// relation-type
+/*
+const upsertRelationType: RequestHandler = async (req, resp, next) => {
+    const data = req.body;
+    const payload = await wrapTask("upsert relation type", async (client) => {
+        const r = new RelationType();
+        r.fromDto(data);
+        return upsertRelType(r, { client })
+    })
+    resp.json({ payload });
+}
+    */
