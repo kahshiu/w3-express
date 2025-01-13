@@ -16,11 +16,19 @@ export class EntityRelationModel {
     relationAttributes: any = Constants.EMPTY_OBJECT;
     relationStatus: number = RelationStatus.ACTIVE;
 
-    fromDto(model: EntityRelationModel) {
-        this.parentId = model.parentId;
+    fromDto(model: Omit<EntityRelationModel, "parentId">, parentId: number) {
+        this.parentId = parentId;
         this.childId = model.childId;
         this.relationId = model.relationId;
         this.relationAttributes = model.relationAttributes;
         this.relationStatus = model.relationStatus;
+    }
+
+    fromRecord(record: EntityRelationRecord) {
+        this.parentId = record.parent_id;
+        this.childId = record.child_id;
+        this.relationId = record.relation_id;
+        this.relationAttributes = record.relation_attributes;
+        this.relationStatus = record.relation_status;
     }
 }

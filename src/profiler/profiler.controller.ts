@@ -1,12 +1,12 @@
 import { wrapTask } from "@src/db/PgHelpers"
+import { EntityType } from "@src/helpers/enums";
 import { wrapCatcher } from "@src/helpers/middlewares";
 import { EntityModelManager } from "./domain/EntityModels";
 import { getEntities } from "./entity.service"
 import { insertEntity, updateEntity } from "./entity.repository";
 import { RequestHandler, Router } from "express"
-import { EntityClass, EntityType, PrimaryType } from "@src/helpers/enums";
-// import { upsertRelType } from "./relation_types.repository";
-import { RelationType } from "./domain/RelationType";
+import { RelationTypeModel } from "./domain/RelationType";
+import { selectRelationTypes, upsertRelationType } from "./relationTypes.repository";
 
 export const registerProfiler = (router: Router) => {
     router.get("/entities", wrapCatcher(getEntitiesRoute));
@@ -29,8 +29,9 @@ export const registerProfiler = (router: Router) => {
     router.patch("/service-provider/person/:id", wrapCatcher(patchEntityRoute(EntityType.SERVICE_PROVIDER_PERSON)));
 
     // NOTE: 
+    router.get("/relation-type", wrapCatcher(getRelationTypes));
+    router.post("/relation-type", wrapCatcher(postRelationType));
     // router.post("/master/company/:parentId/employee-employer/:childId", upsertRelation);
-    // router.post("/relation-type", upsertRelationType);
 
     /*
     router.post("/client/company/:parentId/:relationType", createMasterCo);
@@ -88,15 +89,20 @@ const getEntitiesByIdRoute: RequestHandler = async (req, resp, next) => {
     resp.json({ payload });
 }
 
-// relation-type
-/*
-const upsertRelationType: RequestHandler = async (req, resp, next) => {
+// SECTION: relation-type
+const postRelationType: RequestHandler = async (req, resp, next) => {
     const data = req.body;
     const payload = await wrapTask("upsert relation type", async (client) => {
-        const r = new RelationType();
+        const r = new RelationTypeModel()
         r.fromDto(data);
-        return upsertRelType(r, { client })
+        return upsertRelationType(r, { client })
     })
     resp.json({ payload });
 }
-    */
+
+const getRelationTypes: RequestHandler = async (req, resp, next) => {
+    const payload = await wrapTask("get relation type", async (client) => {
+        return selectRelationTypes({ client })
+    })
+    resp.json({ payload });
+}
