@@ -1,30 +1,43 @@
 import { Constants } from "@src/helpers/constants"
 import { NullableString, NullableDate, NullableNumber } from "@src/helpers/interfaces"
+import { logger } from "@src/logger"
 import { z } from "zod";
 
 export class CompanyRecord {
-    co_reg_no_old: NullableString = null
-    co_reg_no_new: NullableString = null
-    employer_no: NullableString = null
-    date_incorp: NullableDate = null
-    date_commence: NullableDate = null
-    year_end_month: NullableNumber = null
-    ar_due_month: NullableNumber = null
-    director_name: NullableString = null
-    director_password: NullableString = null
+    public co_reg_no_old: NullableString = null
+    public co_reg_no_new: NullableString = null
+    public employer_no: NullableString = null
+    public date_incorp: NullableDate = null
+    public date_commence: NullableDate = null
+    public year_end_month: NullableNumber = null
+    public ar_due_month: NullableNumber = null
+    public director_name: NullableString = null
+    public director_password: NullableString = null
+}
+
+export class CompanyDto {
+    public coRegNoOld: NullableString = null
+    public coRegNoNew: NullableString = null
+    public employerNo: NullableString = null
+    public dateIncorp: NullableDate = null
+    public dateCommence: NullableDate = null
+    public yearEndMonth: NullableNumber = null
+    public arDueMonth: NullableNumber = null
+    public directorName: NullableString = null
+    public directorPassword: NullableString = null
 }
 
 export class CompanyModel {
-    coRegNoOld: NullableString = null
-    coRegNoNew: NullableString = null
-    employerNo: NullableString = null
-    dateIncorp: NullableDate = null
-    dateCommence: NullableDate = null
-    yearEndMonth: NullableNumber = null
-    arDueMonth: NullableNumber = null
-    directorName: NullableString = null
-    directorPassword: NullableString = null
-    
+    public coRegNoOld: NullableString = null
+    public coRegNoNew: NullableString = null
+    public employerNo: NullableString = null
+    public dateIncorp: NullableDate = null
+    public dateCommence: NullableDate = null
+    public yearEndMonth: NullableNumber = null
+    public arDueMonth: NullableNumber = null
+    public directorName: NullableString = null
+    public directorPassword: NullableString = null
+
     validate(dto: unknown) {
         const schema = z.object({
             coRegNoOld: z.string().nullable().optional(),
@@ -37,10 +50,14 @@ export class CompanyModel {
             directorName: z.string().nullable().optional(),
             directorPassword: z.string().nullable().optional(),
         })
-        return schema.safeParse(dto);
+        const validationResult = schema.safeParse(dto);
+        if (!validationResult.success) {
+            logger.info(validationResult.error, "company validation failed")
+        }
+        return validationResult
     }
 
-    fromDto<T extends CompanyModel>(dto: T) {
+    fromDto<T extends CompanyDto>(dto: T) {
         this.coRegNoOld = dto.coRegNoOld
         this.coRegNoNew = dto.coRegNoNew
         this.employerNo = dto.employerNo
@@ -51,4 +68,32 @@ export class CompanyModel {
         this.directorName = dto.directorName
         this.directorPassword = dto.directorPassword
     }
+
+    toDto() {
+        const dto = new CompanyDto()
+        dto.coRegNoOld = this.coRegNoOld
+        dto.coRegNoNew = this.coRegNoNew
+        dto.employerNo = this.employerNo
+        dto.dateIncorp = this.dateIncorp ? (dto.dateIncorp as Date).toISOString() : null
+        dto.dateCommence = this.dateCommence ? (dto.dateCommence as Date).toISOString() : null
+        dto.yearEndMonth = this.yearEndMonth
+        dto.arDueMonth = this.arDueMonth
+        dto.directorName = this.directorName
+        dto.directorPassword = this.directorPassword
+        return dto;
+    }
+
+    fromRecord<T extends CompanyRecord>(record: T) {
+        this.coRegNoOld = record.co_reg_no_old
+        this.coRegNoNew = record.co_reg_no_new
+        this.employerNo = record.employer_no
+        this.dateIncorp = record.date_incorp
+        this.dateCommence = record.date_commence
+        this.yearEndMonth = record.year_end_month
+        this.arDueMonth = record.ar_due_month
+        this.directorName = record.director_name
+        this.directorPassword = record.director_password
+    }
+
+    toRecord() { }
 }

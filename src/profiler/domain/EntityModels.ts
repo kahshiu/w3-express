@@ -3,9 +3,9 @@ import { CompanyModel, CompanyRecord } from "./base/Company"
 import { EntityModel, EntityRecord } from "./base/Entity"
 import { PersonModel, PersonRecord } from "./base/Person"
 import { ClientModel, ClientRecord } from "./base/Client"
-import { logger } from "@src/logger"
 import { HttpBadRequest } from "@src/errors/HttpError"
 
+export type TEntityDto = EntityModel & CompanyModel & PersonModel & ClientModel
 export type TEntityModel = EntityModel & CompanyModel & PersonModel & ClientModel
 export type TEntityRecord = EntityRecord & CompanyRecord & PersonRecord & ClientRecord
 
@@ -18,43 +18,11 @@ export class AbstractEntityModel {
         public client: ClientModel | null,
     ) { }
 
-    validate(dto: unknown) {
-        let isValidEntity = true;
-        let isValidCompany = true;
-        let isValidPerson = true;
-        let isValidClient = true;
-
-        if (this.entity) {
-            const vResult = this.entity.validate(dto);
-            isValidEntity = vResult.success;
-            if (!isValidEntity) {
-                logger.info(vResult.error, "entity validation failed")
-            }
-        }
-
-        if (this.company) {
-            const vResult = this.company.validate(dto);
-            isValidCompany = vResult.success;
-            if (!isValidCompany) {
-                logger.info(vResult.error, "company validation failed")
-            }
-        }
-
-        if (this.person) {
-            const vResult = this.person.validate(dto);
-            isValidPerson = vResult.success;
-            if (!isValidPerson) {
-                logger.info(vResult.error, "person validation failed")
-            }
-        }
-
-        if (this.client) {
-            const vResult = this.client.validate(dto);
-            isValidClient = vResult.success;
-            if (!isValidClient) {
-                logger.info(vResult.error, "client validation failed")
-            }
-        }
+    validate(dto: TEntityDto) {
+        const isValidEntity = this.entity ? this.entity.validate(dto).success : true;
+        const isValidCompany = this.company ? this.company.validate(dto).success : true;
+        const isValidPerson = this.person ? this.person.validate(dto).success : true;
+        const isValidClient = this.client ? this.client.validate(dto).success : true;
 
         const isValid = isValidEntity && isValidCompany && isValidPerson && isValidClient
         if (!isValid) {
@@ -70,6 +38,21 @@ export class AbstractEntityModel {
         if (this.company) this.company.fromDto(dto);
         if (this.person) this.person.fromDto(dto);
         if (this.client) this.client.fromDto(dto);
+    }
+
+    toDto() {
+        const entity = this.entity?.toDto() ?? {};
+        const company = this.company?.toDto() ?? {};
+        const person = this.person?.toDto() ?? {};
+        const client = this.client?.toDto() ?? {};
+        return { ...entity, ...company, ...person, ...client }
+    }
+
+    fromRecord(record: TEntityRecord) {
+        if(this.entity) this.entity.fromRecord(record);
+        if(this.company) this.company.fromRecord(record);
+        if(this.person) this.person.fromRecord(record);
+        if(this.client) this.client.fromRecord(record);
     }
 
     getValues() {
