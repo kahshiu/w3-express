@@ -7,6 +7,7 @@ export const wrapCatcher = (fn: RequestHandler) => {
         try {
             await fn(req, resp, next);
         } catch (error) {
+            logger.error(error, "wrapCatcher caught error");
             next(error)
         }
     }

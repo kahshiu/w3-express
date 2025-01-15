@@ -1,58 +1,50 @@
-import { getTemplateFragments } from "@src/db/templates";
-import { EntityType } from "@src/helpers/enums";
+import { selectTemplate, toColumnName, upsertTemplate } from "@src/db/templates";
+import { EntityClass, PrimaryType } from "@src/helpers/enums";
 import { logger } from "@src/logger";
 import { omit } from "es-toolkit";
 import { PoolClient } from "pg";
-import { EntityModel } from "./domain/base/Entity";
-import { EntityModelManager } from "./domain/EntityModels";
 
-export const insertEntity = async <M extends EntityModel>(entityType: EntityType, data: M, options: { 
-    client: PoolClient 
+export const insertEntity = async (data: any, options: {
+    client: PoolClient,
+    returnedColumns: string[],
 }) => {
-    const { client } = options;
+    const { client, returnedColumns } = options;
+    const excludeColumns = ["entityId"]
 
-    const { instance } = new EntityModelManager(entityType);
-    const frags = getTemplateFragments(instance.getValues());
-    const selectedColumns = frags.map(({ column }) => column).join(",")
-
-    const insertData = omit(data, ["entityId"]);
-    const insertFrags = getTemplateFragments(insertData);
+    const insertFrags = upsertTemplate(
+        omit(data, excludeColumns)
+    );
     const insertColumns = insertFrags.map(({ column }) => column).join(",");
     const insertPlaceholders = insertFrags.map(({ placeholder }) => placeholder).join(",");
     const insertValues = insertFrags.map(({ value }) => value);
 
     logger.info({ insertColumns, insertValues }, "tracing sql: insert entity")
     const records = await client.query({
-        name: "insert entity",
         text:
             `insert into my_way2.entity (
                 ${insertColumns}
             ) values (
                 ${insertPlaceholders}
-            ) returning ${selectedColumns}`,
+            ) returning ${returnedColumns.map((col) => toColumnName(col))}`,
         values: insertValues,
     })
-    const models = records.rows.map((row) => {
-        const { instance } = new EntityModelManager(entityType);
-        instance.fromRecord(row);
-        return instance.getValues()
-    });
-    return models;
+    return records.rows.map((row) => selectTemplate(row));
 }
 
-export const updateEntity = async <M extends EntityModel>(entityType: EntityType, data: M, options: {
+export const updateEntity = async (data: any, options: {
     client: PoolClient,
-    criteria: { entityId: number },
+    returnedColumns: string[],
+    criteria: {
+        entityId: number,
+        entityClass: EntityClass,
+        entityTypePrimary: PrimaryType,
+    },
 }) => {
-    const { client, criteria: { entityId } } = options;
+    const { client, returnedColumns, criteria: { entityId, entityClass, entityTypePrimary } } = options;
 
-    const { instance } = new EntityModelManager(entityType);
-    const frags = getTemplateFragments(instance.getValues());
-    const selectedColumns = frags.map(({ column }) => column).join(",")
-
-    const excludeColumns: (keyof M)[] = ["entityId", "entityClass", "entityTypePrimary"];
+    const excludeColumns = ["entityId", "entityClass", "entityTypePrimary"];
     const updateData = omit(data, excludeColumns);
-    const updateFrags = getTemplateFragments(updateData);
+    const updateFrags = upsertTemplate(updateData);
     const updatePlaceholders = updateFrags.map(({ updatePlaceholder }) => updatePlaceholder).join(",");
     const values = updateFrags.map(({ value }) => value)
 
@@ -60,52 +52,43 @@ export const updateEntity = async <M extends EntityModel>(entityType: EntityType
     if (entityId && entityId > 0) {
         whereArr.push(`entity_id = ${entityId}`)
     }
-    whereArr.push(`entity_class = ${instance.entity.entityClass}`)
-    whereArr.push(`entity_type_primary = ${instance.entity.entityTypePrimary}`)
+    whereArr.push(`entity_class = ${entityClass}`)
+    whereArr.push(`entity_type_primary = ${entityTypePrimary}`)
     const whereClause = whereArr.length > 0 ? `where ${whereArr.join(" and ")}` : "";
 
     logger.info({ updatePlaceholders, values, whereClause }, "tracing sql: update entity")
     const records = await client.query({
-        name: "update entity",
         text:
             `update my_way2.entity set ${updatePlaceholders}
             ${whereClause}
-            returning ${selectedColumns}`,
+            returning ${returnedColumns.map((col) => toColumnName(col))}`,
         values,
     })
-    const models = records.rows.map((row) => {
-        const { instance } = new EntityModelManager(entityType);
-        instance.fromRecord(row);
-        return instance.getValues()
-    });
-    return models;
+    return records.rows.map((row) => selectTemplate(row));
 }
 
-export const selectEntities = async (entityType: EntityType, options: {
+export const selectEntities = async (options: {
     client: PoolClient,
-    criteria: { includeIds?: number[] },
+    selectColumns: string[],
+    criteria: {
+        includeIds: number[],
+        entityClass: EntityClass,
+        entityTypePrimary: PrimaryType
+    },
 }) => {
-    const { instance } = new EntityModelManager(entityType);
-    const frags = getTemplateFragments(instance.getValues());
-    const selectedColumns = frags.map(({ column }) => column).join(",")
-
-    const { client, criteria } = options;
-    const { includeIds } = criteria
+    const { client, selectColumns, criteria: { includeIds, entityClass, entityTypePrimary } } = options;
 
     const whereArr: string[] = [];
-    if (includeIds && includeIds.length > 0) {
-        whereArr.push(`entity_id = ${includeIds}`)
+    if (includeIds.length > 0) {
+        whereArr.push(`entity_id in (${includeIds})`)
     }
-    whereArr.push(`entity_class = ${instance.entity.entityClass}`)
-    whereArr.push(`entity_type_primary = ${instance.entity.entityTypePrimary}`)
+    whereArr.push(`entity_class = ${entityClass}`)
+    whereArr.push(`entity_type_primary = ${entityTypePrimary}`)
     const whereClause = whereArr.length > 0 ? `where ${whereArr.join(" and ")}` : "";
 
-    logger.info({ selectedColumns, whereArr }, `check entity model`);
-    const records = await client.query(`select ${selectedColumns} from my_way2.entity ${whereClause}`)
-    const models = records.rows.map((row) => {
-        const { instance } = new EntityModelManager(entityType);
-        instance.fromRecord(row);
-        return instance.getValues()
-    });
-    return models;
+    logger.info({ selectColumns, whereArr }, `check entity model`);
+    const records = await client.query(`
+        select ${selectColumns.map((col) => toColumnName(col))} 
+        from my_way2.entity ${whereClause}`)
+    return records.rows.map((row) => selectTemplate(row));
 }

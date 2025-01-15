@@ -1,12 +1,12 @@
 import { wrapTask } from "@src/db/PgHelpers"
 import { EntityType } from "@src/helpers/enums";
 import { wrapCatcher } from "@src/helpers/middlewares";
-import { EntityModelManager } from "./domain/EntityModels";
-import { getEntities } from "./entity.service"
-import { insertEntity, updateEntity } from "./entity.repository";
-import { RequestHandler, Router } from "express"
+import { logger } from "@src/logger";
+// import { entityModelManager, EntityModelUtils, TEntityDecomposedDto, validateEntity } from "./domain/EntityModels";
+import { getEntities, createEntity, modifyEntity } from "./entity.service";
 import { RelationTypeModel } from "./domain/RelationType";
-import { selectRelationTypes, upsertRelationType } from "./relationTypes.repository";
+// import { selectRelationTypes, upsertRelationType } from "./relationTypes.repository";
+import { RequestHandler, Router } from "express"
 
 export const registerProfiler = (router: Router) => {
     router.get("/entities", wrapCatcher(getEntitiesRoute));
@@ -29,8 +29,8 @@ export const registerProfiler = (router: Router) => {
     router.patch("/service-provider/person/:id", wrapCatcher(patchEntityRoute(EntityType.SERVICE_PROVIDER_PERSON)));
 
     // NOTE: 
-    router.get("/relation-type", wrapCatcher(getRelationTypes));
-    router.post("/relation-type", wrapCatcher(postRelationType));
+    // router.get("/relation-type", wrapCatcher(getRelationTypes));
+    // router.post("/relation-type", wrapCatcher(postRelationType));
     // router.post("/master/company/:parentId/employee-employer/:childId", upsertRelation);
 
     /*
@@ -44,15 +44,11 @@ export const registerProfiler = (router: Router) => {
 
 // SECTION: creation block
 const createEntityRoute = (entityType: EntityType): RequestHandler => async (req, resp, next) => {
-    const data = req.body;
-    const { instance } = new EntityModelManager(entityType);
-    instance.validate(data);
-    instance.fromDto(data, 0);
+    const dto = req.body;
 
-    const payload = await wrapTask(`insert wrapper for ${entityType}`, (client) => {
-        return insertEntity(entityType, instance.getValues(), { client })
+    const payload = await wrapTask(`insert wrapper for ${entityType}`, async (client) => {
+        return createEntity(entityType, dto, { client });
     })
-
     resp.json({ payload });
 }
 
@@ -61,12 +57,8 @@ const patchEntityRoute = (entityType: EntityType): RequestHandler => async (req,
     const data = req.body;
     const entityId = Number(id);
 
-    const { instance } = new EntityModelManager(EntityType.SERVICE_PROVIDER_PERSON);
-    instance.validate(data);
-    instance.fromDto(req.body, entityId);
-
     const payload = await wrapTask(`patch wraper for ${entityType}`, (client) => {
-        return updateEntity(EntityType.SERVICE_PROVIDER_PERSON, data, { client, criteria: { entityId } })
+        return modifyEntity(entityType, { ...data, entityId }, { client })
     })
 
     resp.json({ payload });
@@ -89,6 +81,7 @@ const getEntitiesByIdRoute: RequestHandler = async (req, resp, next) => {
     resp.json({ payload });
 }
 
+/*
 // SECTION: relation-type
 const postRelationType: RequestHandler = async (req, resp, next) => {
     const data = req.body;
@@ -106,3 +99,4 @@ const getRelationTypes: RequestHandler = async (req, resp, next) => {
     })
     resp.json({ payload });
 }
+    */
