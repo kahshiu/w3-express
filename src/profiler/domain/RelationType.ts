@@ -1,25 +1,32 @@
-import { Constants } from "@src/helpers/constants";
+import { HttpBadRequest } from "@src/errors/HttpError";
+import { logger } from "@src/logger";
+import { record, z } from "zod";
 
-export class RelationTypeRecord {
-    relation_id: number = Constants.EMPTY_NUMBER
-    relation_name: string = Constants.EMPTY_STRING
-    relation_description: string = Constants.EMPTY_STRING
+// SECTION: Dto schema
+export const RelationTypeSchema = z.object({
+    relationId: z.number(),
+    relationName: z.string(),
+    relationDescription: z.string(),
+})
+
+export type RelationTypeDto = z.infer<typeof RelationTypeSchema>
+
+export interface IRelationTypeModel {
+    relationId: number
+    relationName: string
+    relationDescription: string
 }
 
-export class RelationTypeModel {
-    relationId: number = Constants.EMPTY_NUMBER
-    relationName: string = Constants.EMPTY_STRING
-    relationDescription: string = Constants.EMPTY_STRING
-
-    fromDto(model: RelationTypeModel) {
-        this.relationId = model.relationId
-        this.relationName = model.relationName
-        this.relationDescription = model.relationDescription
+export const relationTypeFromDto = (dto: RelationTypeDto) => {
+    try {
+        RelationTypeSchema.parse(dto)
+    } catch (err) {
+        logger.warn(err, "Relation type validation error.");
+        throw new HttpBadRequest("Relation type validation error.");
     }
+    return dto as IRelationTypeModel
+}
 
-    fromRecord(record: RelationTypeRecord) {
-        this.relationId = record.relation_id
-        this.relationName = record.relation_name
-        this.relationDescription = record.relation_description
-    }
+export const relationTypeToDto = (model: IRelationTypeModel) => {
+    return model as RelationTypeDto; 
 }

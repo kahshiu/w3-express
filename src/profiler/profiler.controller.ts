@@ -2,10 +2,9 @@ import { wrapTask } from "@src/db/PgHelpers"
 import { EntityType } from "@src/helpers/enums";
 import { wrapCatcher } from "@src/helpers/middlewares";
 import { logger } from "@src/logger";
-// import { entityModelManager, EntityModelUtils, TEntityDecomposedDto, validateEntity } from "./domain/EntityModels";
+import { IRelationTypeModel, relationTypeFromDto } from "./domain/RelationType";
 import { getEntities, createEntity, modifyEntity } from "./entity.service";
-import { RelationTypeModel } from "./domain/RelationType";
-// import { selectRelationTypes, upsertRelationType } from "./relationTypes.repository";
+import { selectRelationTypes, upsertRelationType } from "./relationTypes.repository";
 import { RequestHandler, Router } from "express"
 
 export const registerProfiler = (router: Router) => {
@@ -29,17 +28,8 @@ export const registerProfiler = (router: Router) => {
     router.patch("/service-provider/person/:id", wrapCatcher(patchEntityRoute(EntityType.SERVICE_PROVIDER_PERSON)));
 
     // NOTE: 
-    // router.get("/relation-type", wrapCatcher(getRelationTypes));
-    // router.post("/relation-type", wrapCatcher(postRelationType));
-    // router.post("/master/company/:parentId/employee-employer/:childId", upsertRelation);
-
-    /*
-    router.post("/client/company/:parentId/:relationType", createMasterCo);
-    router.patch("/client/company/:parentId/relation/:childId", patchMasterCo);
-
-    router.post("/service-provider/company/:parentId/:relationType", createMasterCo);
-    router.patch("/service-provider/company/:parentId/relation/:childId", patchMasterCo);
-    */
+    router.get("/relation-type", wrapCatcher(getRelationTypes));
+    router.post("/relation-type", wrapCatcher(postRelationType));
 }
 
 // SECTION: creation block
@@ -81,14 +71,12 @@ const getEntitiesByIdRoute: RequestHandler = async (req, resp, next) => {
     resp.json({ payload });
 }
 
-/*
 // SECTION: relation-type
 const postRelationType: RequestHandler = async (req, resp, next) => {
-    const data = req.body;
+    const dto = req.body;
     const payload = await wrapTask("upsert relation type", async (client) => {
-        const r = new RelationTypeModel()
-        r.fromDto(data);
-        return upsertRelationType(r, { client })
+        const model = relationTypeFromDto(dto as IRelationTypeModel);
+        return upsertRelationType(model, { client })
     })
     resp.json({ payload });
 }
@@ -99,4 +87,3 @@ const getRelationTypes: RequestHandler = async (req, resp, next) => {
     })
     resp.json({ payload });
 }
-    */
