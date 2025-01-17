@@ -6,6 +6,7 @@ import { IRelationTypeModel, relationTypeFromDto } from "./domain/RelationType";
 import { getEntities, createEntity, modifyEntity } from "./entity.service";
 import { selectRelationTypes, upsertRelationType } from "./relationTypes.repository";
 import { RequestHandler, Router } from "express"
+import { deleteEntityRelations } from "./entityRelations.repository";
 
 export const registerProfiler = (router: Router) => {
     router.get("/entities", wrapCatcher(getEntitiesRoute));
@@ -30,6 +31,7 @@ export const registerProfiler = (router: Router) => {
     // NOTE: 
     router.get("/relation-type", wrapCatcher(getRelationTypes));
     router.post("/relation-type", wrapCatcher(postRelationType));
+    router.delete("/relation/:pid-:cid", wrapCatcher(removeEntityRelationRoute));
 }
 
 // SECTION: creation block
@@ -69,6 +71,21 @@ const getEntitiesByIdRoute: RequestHandler = async (req, resp, next) => {
     })
 
     resp.json({ payload });
+}
+
+const removeEntityRelationRoute: RequestHandler = async (req, resp, next) => {
+    const { pid, cid } = req.params;
+    const deletedCount = await wrapTask("remove entity relation", async (client) => {
+        return deleteEntityRelations(Number(pid), Number(cid), { client });
+    })
+    resp.statusCode = 204
+    resp.statusMessage = "Soft-deleted record"
+
+    if (deletedCount === 0) {
+        resp.statusCode = 404
+        resp.statusMessage = "Non-existent record"
+    }
+    resp.end();
 }
 
 // SECTION: relation-type

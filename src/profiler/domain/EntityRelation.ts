@@ -1,51 +1,50 @@
-import { Constants } from "@src/helpers/constants";
-import { RelationStatus } from "@src/helpers/enums";
+import { IEntityDto } from "./entity/IDto";
 
-export class RelationDto {
-    parentId?: number = Constants.EMPTY_NUMBER;
-    childId?: number = Constants.EMPTY_NUMBER;
-    relationId: number = Constants.EMPTY_NUMBER;
-    relationAttributes: any = Constants.EMPTY_OBJECT;
-    relationStatus: number = RelationStatus.ACTIVE;
+export interface IRelationModel {
+    parentId: number
+    childId: number
+    relationId: number
+    relationAttributes: any
+    relationStatus: number
 }
 
-export class RelationModel extends RelationDto { }
+export const relationfromEntityDto = (dto: IEntityDto) => {
+    const { relatedChildren, relatedParents, entityId } = dto;
 
-export class RelationRecord {
-    parent_id?: number = Constants.EMPTY_NUMBER;
-    child_id?: number = Constants.EMPTY_NUMBER;
-    relation_id: number = Constants.EMPTY_NUMBER;
-    relation_attributes: any = Constants.EMPTY_OBJECT;
-    relation_status: number = Constants.EMPTY_NUMBER;
+    const childrenModel = relatedChildren.map((child) => {
+        const { entityId: childId, ...rest } = child;
+        return {
+            parentId: entityId,
+            childId,
+            ...rest,
+        } as IRelationModel;
+    })
+
+    const parentsModel = relatedParents.map((parent) => {
+        const { entityId: parentId, ...rest } = parent;
+        return {
+            parentId,
+            childId: entityId,
+            ...rest,
+        } as IRelationModel;
+    })
+
+    return { childrenModel, parentsModel };
 }
 
-export class RelationUtils {
-    static fromDto(model: RelationModel, dto: RelationDto) {
-        model.parentId = dto.parentId;
-        model.childId = dto.childId;
-        model.relationId = dto.relationId;
-        model.relationAttributes = dto.relationAttributes;
-        model.relationStatus = dto.relationStatus;
-    }
-    static toDto(model: RelationModel, dto: RelationDto) {
-        dto.parentId = model.parentId;
-        model.childId = dto.childId;
-        dto.relationId = model.relationId;
-        dto.relationAttributes = model.relationAttributes;
-        dto.relationStatus = model.relationStatus;
-    }
-    static fromRecord(model: RelationModel, dto: RelationRecord) {
-        model.parentId = dto.parent_id;
-        model.childId = dto.child_id;
-        model.relationId = dto.relation_id;
-        model.relationAttributes = dto.relation_attributes;
-        model.relationStatus = dto.relation_status;
-    }
-    static toRecord(model: RelationModel, dto: RelationRecord) {
-        dto.parent_id = model.parentId; 
-        dto.child_id = model.childId; 
-        dto.relation_id = model.relationId; 
-        dto.relation_attributes = model.relationAttributes; 
-        dto.relation_status = model.relationStatus; 
-    }
+export const relationfromEntityModel = (
+    childrenModel: IRelationModel[],
+    parentsModel: IRelationModel[],
+) => {
+    const relatedChildren = childrenModel.map((child) => {
+        const { childId, ...rest } = child;
+        return rest;
+    })
+
+    const relatedParents = parentsModel.map((parent) => {
+        const { parentId, ...rest } = parent;
+        return rest;
+    })
+
+    return { relatedChildren, relatedParents };
 }

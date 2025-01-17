@@ -4,6 +4,8 @@ import { insertEntity, selectEntities, updateEntity } from "./entity.repository"
 import { entitySpecs } from "./domain/entity/Config";
 import { entityFromDto } from "./domain/entity/Entity";
 import { IEntityDto } from "./domain/entity/IDto";
+import { IRelationModel, relationfromEntityDto, relationfromEntityModel } from "./domain/EntityRelation";
+import { upsertEntityRelation } from "./entityRelations.repository";
 
 export const createEntity = async (
     entityType: EntityType,
@@ -11,6 +13,7 @@ export const createEntity = async (
     options: { client: PoolClient }
 ) => {
     const entityModel = entityFromDto(entityType, dto);
+    const { childrenModel, parentsModel } = relationfromEntityDto(dto);
     const spec = entitySpecs[entityType];
     const returnedColumns = spec.columns;
 
@@ -18,7 +21,18 @@ export const createEntity = async (
         entityModel,
         { ...options, returnedColumns }
     )
-    return entities;
+
+    const childrenModelSaved = childrenModel.map((child) => upsertEntityRelation(child, options))
+    const parentsModelSaved = parentsModel.map((parent) => upsertEntityRelation(parent, options))
+
+    const children = await Promise.all(childrenModelSaved);
+    const parents = await Promise.all(parentsModelSaved);
+
+    const cModel = children as unknown as IRelationModel[]
+    const pModel = parents as unknown as IRelationModel[]
+
+    const relations = relationfromEntityModel(cModel, pModel)
+    return { ...entities, ...relations };
 }
 
 export const modifyEntity = async (
@@ -30,6 +44,7 @@ export const modifyEntity = async (
 ) => {
     const entityModel = entityFromDto(entityType, dto);
     const { entityId, entityClass, entityTypePrimary } = entityModel
+    const { childrenModel, parentsModel } = relationfromEntityDto(dto);
     const spec = entitySpecs[entityType];
     const returnedColumns = spec.columns
 
@@ -45,7 +60,17 @@ export const modifyEntity = async (
             }
         },
     )
-    return entities;
+    const childrenModelSaved = childrenModel.map((child) => upsertEntityRelation(child, options))
+    const parentsModelSaved = parentsModel.map((parent) => upsertEntityRelation(parent, options))
+
+    const children = await Promise.all(childrenModelSaved);
+    const parents = await Promise.all(parentsModelSaved);
+
+    const cModel = children as unknown as IRelationModel[]
+    const pModel = parents as unknown as IRelationModel[]
+
+    const relations = relationfromEntityModel(cModel, pModel)
+    return { ...entities, ...relations };
 }
 
 const getEntity = async (

@@ -1,7 +1,13 @@
-import { SecondaryType, EntityStatus, IcType, ProfileStatus } from "@src/helpers/enums";
+import { 
+    SecondaryType, 
+    EntityStatus, 
+    IcType, 
+    ProfileStatus, 
+    RelationStatus 
+} from "@src/helpers/enums";
 import { z } from "zod";
 
-// SECTION: Dto schema
+// SECTION: Dto schema: entity only
 export const BaseSchema = z.object({
     entityId: z.number().optional(),
     entityName: z.string(),
@@ -34,8 +40,31 @@ export const ClientSchema = z.object({
     profileStatus: z.nativeEnum(ProfileStatus),
 });
 
+// SECTION: Dto schema: entity relations
+export const ChildRelationSchema = z.object({
+    entityId: z.number(),
+    relationId: z.number(),
+    relationAttributes: z.object({}),
+    relationStatus: z.nativeEnum(RelationStatus),
+})
+
+export const ParentRelationSchema = z.object({
+    entityId: z.number(),
+    relationId: z.number(),
+    relationAttributes: z.object({}),
+    relationStatus: z.nativeEnum(RelationStatus),
+})
+
+export const EntityRelationSchema = z.object({
+    relatedChildren: z.array(ChildRelationSchema),
+    relatedParents: z.array(ParentRelationSchema),
+})
+
+// SECTION: dto
 export type BaseDto = z.infer<typeof BaseSchema>
 export type CompanyDto = z.infer<typeof CompanySchema>
 export type PersonDto = z.infer<typeof PersonSchema>
 export type ClientDto = z.infer<typeof ClientSchema>
-export type IEntityDto = BaseDto & CompanyDto & PersonDto & ClientDto
+export type EntityRelationDto = z.infer<typeof EntityRelationSchema>;
+
+export type IEntityDto = BaseDto & CompanyDto & PersonDto & ClientDto & EntityRelationDto

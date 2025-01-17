@@ -1,6 +1,6 @@
 import { Constants } from "@src/helpers/constants"
 import { EntityClass, PrimaryType, SecondaryType, EntityStatus, IcType, ProfileStatus } from "@src/helpers/enums"
-import { BaseSchema, CompanySchema, ClientSchema, PersonSchema } from "./IDto"
+import { BaseSchema, CompanySchema, ClientSchema, PersonSchema, EntityRelationSchema } from "./IDto"
 import { IBaseModel, IClientModel, ICompanyModel, IPersonModel } from "./IModel"
 import { strToDate, dateToStr } from "@src/helpers/util"
 
@@ -70,7 +70,7 @@ export const entityFragments = {
 
 export const entitySpecs = {
     "master_company": {
-        dtoSchema: BaseSchema.merge(CompanySchema).merge(ClientSchema),
+        dtoSchema: BaseSchema.merge(CompanySchema).merge(ClientSchema).merge(EntityRelationSchema),
         columns: [
             ...entityFragments.entity.columns,
             ...entityFragments.company.columns,
@@ -99,7 +99,7 @@ export const entitySpecs = {
         },
     },
     "master_person": {
-        dtoSchema: BaseSchema.merge(PersonSchema).merge(ClientSchema),
+        dtoSchema: BaseSchema.merge(PersonSchema).merge(ClientSchema).merge(EntityRelationSchema),
         columns: [
             ...entityFragments.entity.columns,
             ...entityFragments.person.columns,
@@ -128,7 +128,7 @@ export const entitySpecs = {
         },
     },
     "client_company": {
-        dtoSchema: BaseSchema.merge(CompanySchema).merge(ClientSchema),
+        dtoSchema: BaseSchema.merge(CompanySchema).merge(ClientSchema).merge(EntityRelationSchema),
         columns: [
             ...entityFragments.entity.columns,
             ...entityFragments.company.columns,
@@ -157,7 +157,7 @@ export const entitySpecs = {
         },
     },
     "client_person": {
-        dtoSchema: BaseSchema.merge(PersonSchema).merge(ClientSchema),
+        dtoSchema: BaseSchema.merge(PersonSchema).merge(ClientSchema).merge(EntityRelationSchema),
         columns: [
             ...entityFragments.entity.columns,
             ...entityFragments.person.columns,
@@ -186,7 +186,7 @@ export const entitySpecs = {
         },
     },
     "service_provider_company": {
-        dtoSchema: BaseSchema.merge(CompanySchema),
+        dtoSchema: BaseSchema.merge(CompanySchema).merge(EntityRelationSchema),
         columns: [
             ...entityFragments.entity.columns,
             ...entityFragments.company.columns,
@@ -211,7 +211,7 @@ export const entitySpecs = {
         },
     },
     "service_provider_person": {
-        dtoSchema: BaseSchema.merge(PersonSchema),
+        dtoSchema: BaseSchema.merge(PersonSchema).merge(EntityRelationSchema),
         columns: [
             ...entityFragments.entity.columns,
             ...entityFragments.person.columns,
