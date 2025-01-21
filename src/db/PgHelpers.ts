@@ -19,7 +19,7 @@ export const wrapTask = async <TResult extends {}, TFn extends TFnQuery<TResult>
     try {
         result = await fn(client);
     } catch (err) {
-        console.log(opName, err)
+        throw err;
     } finally {
         client.release();
     }
@@ -37,7 +37,8 @@ export const wrapTrx = async <TResult extends {}, TFn extends TFnQuery<TResult>>
 
         await client.query("COMMIT");
     } catch (err) {
-        console.log(opName, err)
+        await client.query("ROLLBACK");
+        throw err;
     } finally {
         client.release();
     }

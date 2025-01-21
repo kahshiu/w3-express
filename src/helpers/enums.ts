@@ -47,3 +47,9 @@ export enum IcType {
     "NEW_IC" = 1,
     "OLD_IC" = 2,
 };
+
+export enum RelationStatus {
+    "ACTIVE" = 1,
+    "KEEP_AS_HISTORY" = 2,
+    "REMOVE" = 901,
+};

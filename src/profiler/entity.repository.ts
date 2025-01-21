@@ -1,92 +1,94 @@
-import { useInsertTemplate, useSelectTemplate, useUpdateTemplate } from "@src/db/templates";
+import { selectTemplate, toColumnName, upsertTemplate } from "@src/db/templates";
 import { EntityClass, PrimaryType } from "@src/helpers/enums";
-import { PoolClient } from "pg";
-import { EntityModel } from "./domain/base/Entity";
-import { omit } from "es-toolkit";
 import { logger } from "@src/logger";
+import { omit } from "es-toolkit";
+import { PoolClient } from "pg";
 
-export const insertEntity = async <M extends EntityModel>(data: M, options: { client: PoolClient }) => {
-    const { client } = options;
-    const { entityId, ...entityToCreate } = data;
-    const { keys: columns, values } = useInsertTemplate(entityToCreate)
-    const columnsJoined = columns.join(",")
-    const valuesJoined = values.join(",")
-    const result = await client.query(
-        `insert into my_way2.entity (
-            ${columnsJoined}
-        ) values (
-            ${valuesJoined}
-        ) returning entity_id, ${columnsJoined}`
-    )
+export const insertEntity = async (data: any, options: {
+    client: PoolClient,
+    returnedColumns: string[],
+}) => {
+    const { client, returnedColumns } = options;
+    const excludeColumns = ["entityId"]
 
-    logger.info(entityToCreate, "tracing sql: insert entity")
-    return result.rows.map((row) => useSelectTemplate(row));
+    const insertFrags = upsertTemplate(
+        omit(data, excludeColumns)
+    );
+    const insertColumns = insertFrags.map(({ column }) => column).join(",");
+    const insertPlaceholders = insertFrags.map(({ placeholder }) => placeholder).join(",");
+    const insertValues = insertFrags.map(({ value }) => value);
+
+    logger.info({ insertColumns, insertValues }, "tracing sql: insert entity")
+    const records = await client.query({
+        text:
+            `insert into my_way2.entity (
+                ${insertColumns}
+            ) values (
+                ${insertPlaceholders}
+            ) returning ${returnedColumns.map((col) => toColumnName(col))}`,
+        values: insertValues,
+    })
+    return records.rows.map((row) => selectTemplate(row));
 }
 
-export const updateEntity = async <M extends EntityModel>(data: M, options: {
+export const updateEntity = async (data: any, options: {
     client: PoolClient,
+    returnedColumns: string[],
     criteria: {
-        entityId?: number,
-        entityClass?: EntityClass,
-        entityTypePrimary?: PrimaryType,
+        entityId: number,
+        entityClass: EntityClass,
+        entityTypePrimary: PrimaryType,
     },
 }) => {
-    const { client, criteria: { entityId, entityClass, entityTypePrimary } } = options;
-    const entityToUpdate = omit(data, ["entityId", "entityClass", "entityTypePrimary"]);
-    const updateCols = useUpdateTemplate(entityToUpdate)
+    const { client, returnedColumns, criteria: { entityId, entityClass, entityTypePrimary } } = options;
+
+    const excludeColumns = ["entityId", "entityClass", "entityTypePrimary"];
+    const updateData = omit(data, excludeColumns);
+    const updateFrags = upsertTemplate(updateData);
+    const updatePlaceholders = updateFrags.map(({ updatePlaceholder }) => updatePlaceholder).join(",");
+    const values = updateFrags.map(({ value }) => value)
 
     const whereArr: string[] = [];
     if (entityId && entityId > 0) {
         whereArr.push(`entity_id = ${entityId}`)
     }
-    if (entityClass) {
-        whereArr.push(`entity_class = ${entityClass}`)
-    }
-    if (entityTypePrimary) {
-        whereArr.push(`entity_type_primary = ${entityTypePrimary}`)
-    }
+    whereArr.push(`entity_class = ${entityClass}`)
+    whereArr.push(`entity_type_primary = ${entityTypePrimary}`)
     const whereClause = whereArr.length > 0 ? `where ${whereArr.join(" and ")}` : "";
 
-    const { keys: columns } = useInsertTemplate(entityToUpdate)
-    const columnsJoined = columns.join(",")
-
-    const result = await client.query(
-        `update my_way2.entity set
-            ${updateCols.join(",")}
-        ${whereClause}
-        returning entity_id, ${columnsJoined}`
-    )
-    logger.info({ updateCols, whereClause }, "tracing sql: update entity")
-    return result.rows.map((row) => useSelectTemplate(row));
+    logger.info({ updatePlaceholders, values, whereClause }, "tracing sql: update entity")
+    const records = await client.query({
+        text:
+            `update my_way2.entity set ${updatePlaceholders}
+            ${whereClause}
+            returning ${returnedColumns.map((col) => toColumnName(col))}`,
+        values,
+    })
+    return records.rows.map((row) => selectTemplate(row));
 }
 
-export const selectEntities = async (columns: string[], options: {
+export const selectEntities = async (options: {
     client: PoolClient,
+    selectColumns: string[],
     criteria: {
-        includeIds?: number[],
-        entityClass?: EntityClass,
-        entityTypePrimary?: PrimaryType,
+        includeIds: number[],
+        entityClass: EntityClass,
+        entityTypePrimary: PrimaryType
     },
 }) => {
-    const { client, criteria } = options;
-    const { includeIds, entityClass, entityTypePrimary } = criteria
+    const { client, selectColumns, criteria: { includeIds, entityClass, entityTypePrimary } } = options;
 
     const whereArr: string[] = [];
-    if (includeIds && includeIds.length > 0) {
-        whereArr.push(`entity_id = ${includeIds}`)
+    if (includeIds.length > 0) {
+        whereArr.push(`entity_id in (${includeIds})`)
     }
-    if (entityClass) {
-        whereArr.push(`entity_class = ${entityClass}`)
-    }
-    if (entityTypePrimary) {
-        whereArr.push(`entity_type_primary = ${entityTypePrimary}`)
-    }
-
-    const columnsJoined = columns.join(",")
+    whereArr.push(`entity_class = ${entityClass}`)
+    whereArr.push(`entity_type_primary = ${entityTypePrimary}`)
     const whereClause = whereArr.length > 0 ? `where ${whereArr.join(" and ")}` : "";
-    const result = await client.query(
-        `select ${columnsJoined}
-        from my_way2.entity ${whereClause}`
-    )
-    return result.rows.map((row) => useSelectTemplate(row));
+
+    logger.info({ selectColumns, whereArr }, `check entity model`);
+    const records = await client.query(`
+        select ${selectColumns.map((col) => toColumnName(col))} 
+        from my_way2.entity ${whereClause}`)
+    return records.rows.map((row) => selectTemplate(row));
 }

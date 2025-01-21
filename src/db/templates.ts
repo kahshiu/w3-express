@@ -1,11 +1,8 @@
 import { isLikeNull } from "@src/helpers/util";
-import { camelCase, isDate, isNull, isString, isUndefined, omitBy, snakeCase } from "es-toolkit";
+import { camelCase, isDate, isUndefined, omitBy, snakeCase } from "es-toolkit";
+import { isObject } from "es-toolkit/compat";
 
-// SECTION: column pipeline handlers
-export const renameColumn = (str: any): string => snakeCase(str);
-export const renameKey = (str: any): string => camelCase(str);
-
-/* 
+/* SECTION: column pipeline handlers
 function: transformColumnValue 
 description: 
     null             - remain as NULL
@@ -18,24 +15,25 @@ export const transformColumnValue = (value: any) => {
     if (isDate(value)) return value.toISOString();
     return value;
 }
-
 export const adaptColumnValue = (value: any) => {
-    if (isNull(value)) return "null";
-    if (isDate(value) || isString(value)) return "'" + value + "'";
+    if(isObject(value)) return JSON.stringify(value)
     return value;
 }
 
-export const fromModelToRecord = (key: string, value: any) => {
-    const processedKey = renameColumn(key);
-    const processedValue = adaptColumnValue(transformColumnValue(value))
+export const toColumnName = (str: any): string => snakeCase(str);
+export const fromColumnName = (str: any): string => camelCase(str);
+
+export const toRecord = (key: string, value: any) => {
+    const processedKey = toColumnName(key);
+    const processedValue = adaptColumnValue(transformColumnValue(value));
     return {
         k: processedKey,
         v: processedValue,
     }
 }
 
-export const fromRecordToModel = (key: string, value: any) => {
-    const processedKey = renameKey(key);
+export const fromRecord = (key: string, value: any) => {
+    const processedKey = fromColumnName(key);
     return {
         k: processedKey,
         v: value,
@@ -43,32 +41,33 @@ export const fromRecordToModel = (key: string, value: any) => {
 }
 
 // SECTION: sql template handlers 
-export const useInsertTemplate = (data: any) => {
-    const keys: string[] = [];
-    const values: string[] = [];
+export const upsertTemplate = (data: any, options: { indexStart: number } = { indexStart: 1 }) => {
+    const { indexStart } = options;
+    const result = [];
+    let index = indexStart ?? 1;
 
     const filteredData = omitBy(data, (key: string) => { return isUndefined(key) })
     for (const key in filteredData) {
-        const { k, v } = fromModelToRecord(key, filteredData[key])
-        keys.push(k)
-        values.push(v)
+        const { k, v } = toRecord(key, filteredData[key])
+        result.push({
+            columnOrig: key,
+            valueOrig: filteredData[key],
+            column: k,
+            value: v,
+            placeholder: `$${index}`,
+            updatePlaceholder: `${k} = $${index}`,
+            updateExcludedColumn: `${k} = excluded.${k}`,
+        });
+        index++;
     }
-    return { keys, values }
+    return result;
 }
 
-export const useUpdateTemplate = (data: any) => {
-    const { keys, values } = useInsertTemplate(data);
-    return keys.map((key, i) => {
-        const value = values[i];
-        return `${key} = ${value}`
-    })
-}
-
-export const useSelectTemplate = (data: any) => {
-    const model: any = {};
+export const selectTemplate = <T extends object>(data: T) => {
+    const model = {} as Record<string, any>;
     for (const key in data) {
         const value = data[key];
-        const { k, v } = fromRecordToModel(key, value)
+        const { k, v } = fromRecord(key, value)
         model[k] = v;
     }
     return model;

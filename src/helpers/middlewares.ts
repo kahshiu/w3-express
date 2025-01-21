@@ -1,4 +1,5 @@
 import { HttpError } from "@src/errors/HttpError";
+import { logger } from "@src/logger";
 import { RequestHandler, ErrorRequestHandler } from "express";
 
 export const wrapCatcher = (fn: RequestHandler) => {
@@ -6,6 +7,7 @@ export const wrapCatcher = (fn: RequestHandler) => {
         try {
             await fn(req, resp, next);
         } catch (error) {
+            logger.error(error, "wrapCatcher caught error");
             next(error)
         }
     }
@@ -15,8 +17,9 @@ export const wrapCatcher = (fn: RequestHandler) => {
 export const errorHandler: ErrorRequestHandler = (err, req, resp, next) => {
     const error = err as HttpError
     const { details } = error;
-    resp.statusCode = details.statusCode;
-    resp.statusMessage = details.statusMessage;
+    resp.statusCode = details?.statusCode ?? 500;
+    resp.statusMessage = details?.statusMessage ?? "something is error";
+    logger.error(error, "final error");
     resp.json({ message: err.message });
 }
 
