@@ -24,6 +24,7 @@ export const upsertEntityRelation = async (data: IRelationModel, options: { clie
             ) values (
                 ${placeholders}
             ) on conflict on constraint pk_entity_relations do update set
+                ${updateColumns}
             returning ${columns}`,
         values,
     })
@@ -42,9 +43,10 @@ export const deleteEntityRelations = async (
         text: `
             update my_way2.entity_relations set 
                 relation_status = ${RelationStatus.REMOVE}
+                , deletion_date = $3
             where parent_id = $1 and child_id = $2
         ;`,
-        values: [parentId, childId]
+        values: [parentId, childId, new Date().toISOString()]
     })
 
     return result.rowCount;

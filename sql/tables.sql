@@ -59,6 +59,7 @@ create table my_way2.entity_relations (
     relation_id int,
     relation_attributes jsonb,
     relation_status smallint,
+    deletion_date timestamptz, 
 
     -- keys
     constraint pk_entity_relations primary key (parent_id, child_id),

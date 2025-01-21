@@ -1,5 +1,6 @@
 import { isLikeNull } from "@src/helpers/util";
 import { camelCase, isDate, isUndefined, omitBy, snakeCase } from "es-toolkit";
+import { isObject } from "es-toolkit/compat";
 
 /* SECTION: column pipeline handlers
 function: transformColumnValue 
@@ -14,13 +15,17 @@ export const transformColumnValue = (value: any) => {
     if (isDate(value)) return value.toISOString();
     return value;
 }
+export const adaptColumnValue = (value: any) => {
+    if(isObject(value)) return JSON.stringify(value)
+    return value;
+}
 
 export const toColumnName = (str: any): string => snakeCase(str);
 export const fromColumnName = (str: any): string => camelCase(str);
 
 export const toRecord = (key: string, value: any) => {
     const processedKey = toColumnName(key);
-    const processedValue = transformColumnValue(value);
+    const processedValue = adaptColumnValue(transformColumnValue(value));
     return {
         k: processedKey,
         v: processedValue,

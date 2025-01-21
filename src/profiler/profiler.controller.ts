@@ -1,4 +1,4 @@
-import { wrapTask } from "@src/db/PgHelpers"
+import { wrapTask, wrapTrx } from "@src/db/PgHelpers"
 import { EntityType } from "@src/helpers/enums";
 import { wrapCatcher } from "@src/helpers/middlewares";
 import { logger } from "@src/logger";
@@ -38,7 +38,7 @@ export const registerProfiler = (router: Router) => {
 const createEntityRoute = (entityType: EntityType): RequestHandler => async (req, resp, next) => {
     const dto = req.body;
 
-    const payload = await wrapTask(`insert wrapper for ${entityType}`, async (client) => {
+    const payload = await wrapTrx(`insert wrapper for ${entityType}`, async (client) => {
         return createEntity(entityType, dto, { client });
     })
     resp.json({ payload });
@@ -49,7 +49,7 @@ const patchEntityRoute = (entityType: EntityType): RequestHandler => async (req,
     const data = req.body;
     const entityId = Number(id);
 
-    const payload = await wrapTask(`patch wraper for ${entityType}`, (client) => {
+    const payload = await wrapTrx(`patch wraper for ${entityType}`, (client) => {
         return modifyEntity(entityType, { ...data, entityId }, { client })
     })
 
@@ -79,11 +79,11 @@ const removeEntityRelationRoute: RequestHandler = async (req, resp, next) => {
         return deleteEntityRelations(Number(pid), Number(cid), { client });
     })
     resp.statusCode = 204
-    resp.statusMessage = "Soft-deleted record"
+    resp.statusMessage = "Relationship soft-deleted"
 
     if (deletedCount === 0) {
         resp.statusCode = 404
-        resp.statusMessage = "Non-existent record"
+        resp.statusMessage = "Relationship Not found"
     }
     resp.end();
 }

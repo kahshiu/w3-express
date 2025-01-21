@@ -37,6 +37,7 @@ export const wrapTrx = async <TResult extends {}, TFn extends TFnQuery<TResult>>
 
         await client.query("COMMIT");
     } catch (err) {
+        await client.query("ROLLBACK");
         throw err;
     } finally {
         client.release();
