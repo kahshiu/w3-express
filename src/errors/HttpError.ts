@@ -4,6 +4,7 @@ enum HttpErrors {
     , "CLIENT_FORBIDDEN" = "CLIENT_FORBIDDEN"
     , "CLIENT_NOT_FOUND" = "CLIENT_NOT_FOUND"
     , "CLIENT_METHOD" = "CLIENT_METHOD"
+    , "CLIENT_UNPROCESSABLE_CONTENT" = "CLIENT_UNPROCESSABLE_CONTENT"
     , "CLIENT_NOT_ACCEPTED" = "CLIENT_NOT_ACCEPTED"
     , "CLIENT_UNSUPPORTED_MEDIA" = "CLIENT_UNSUPPORTED_MEDIA"
     , "CLIENT_FAILED_DEPENDENCY" = "CLIENT_FAILED_DEPENDENCY"
@@ -22,6 +23,7 @@ const HttpMapping = new Map<keyof typeof HttpErrors, { statusCode: number, statu
     , ["CLIENT_METHOD", { statusCode: 405, statusMessage: "Method Not Allowed" }]
     , ["CLIENT_NOT_ACCEPTED", { statusCode: 406, statusMessage: "Not Accepted" }]
     , ["CLIENT_UNSUPPORTED_MEDIA", { statusCode: 415, statusMessage: "Unsupported Media Type" }]
+    , ["CLIENT_UNPROCESSABLE_CONTENT", { statusCode: 422, statusMessage: "Unprocessable Content" }]
     , ["CLIENT_FAILED_DEPENDENCY", { statusCode: 424, statusMessage: "Failed Dependency" }]
 
     , ["SERVER_ERROR", { statusCode: 500, statusMessage: "Internal Server Error" }]
@@ -48,5 +50,11 @@ export class HttpError extends Error {
 export class HttpBadRequest extends HttpError {
     constructor(message?: string) {
         super(HttpErrors.CLIENT_BAD_REQUEST, message)
+    }
+}
+
+export class HttpClientUnprocessableContent extends HttpError {
+    constructor(message?: string) {
+        super(HttpErrors.CLIENT_UNPROCESSABLE_CONTENT, message)
     }
 }

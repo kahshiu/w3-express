@@ -7,6 +7,7 @@ import { getEntities, createEntity, modifyEntity } from "./entity.service";
 import { selectRelationTypes, upsertRelationType } from "./relationTypes.repository";
 import { RequestHandler, Router } from "express"
 import { deleteEntityRelations } from "./entityRelations.repository";
+import { HttpClientUnprocessableContent } from "@src/errors/HttpError";
 
 export const registerProfiler = (router: Router) => {
     router.get("/entities", wrapCatcher(getEntitiesRoute));
@@ -93,6 +94,9 @@ const postRelationType: RequestHandler = async (req, resp, next) => {
     const dto = req.body;
     const payload = await wrapTask("upsert relation type", async (client) => {
         const model = relationTypeFromDto(dto as IRelationTypeModel);
+        if (model.relationId <= 0) {
+            throw new HttpClientUnprocessableContent("Validation Error: Invalid relationId")
+        }
         return upsertRelationType(model, { client })
     })
     resp.json({ payload });
