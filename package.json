@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@dotenvx/dotenvx": "^1.32.1",
+    "axios": "^1.7.9",
     "cors": "^2.8.5",
     "date-and-time": "^3.6.0",
     "es-toolkit": "^1.31.0",
