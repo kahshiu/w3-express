@@ -61,10 +61,10 @@ export const EntityRelationSchema = z.object({
 })
 
 // SECTION: dto
-export type BaseDto = z.infer<typeof BaseSchema>
-export type CompanyDto = z.infer<typeof CompanySchema>
-export type PersonDto = z.infer<typeof PersonSchema>
-export type ClientDto = z.infer<typeof ClientSchema>
+export type BaseDto = z.infer<typeof BaseSchema>;
+export type CompanyDto = z.infer<typeof CompanySchema>;
+export type PersonDto = z.infer<typeof PersonSchema>;
+export type ClientDto = z.infer<typeof ClientSchema>;
 export type EntityRelationDto = z.infer<typeof EntityRelationSchema>;
 
 export type IEntityDto = BaseDto & CompanyDto & PersonDto & ClientDto & EntityRelationDto
