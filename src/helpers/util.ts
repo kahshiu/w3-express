@@ -7,6 +7,18 @@ export const isLikeNull = (value: unknown) => {
     return isNull(value) || isNullDate || isNullString;
 }
 
+// SECTION: running no
+export const parseNumber = (target: any) => {
+    return target ? Number(target) : target;
+}
+
+export const runningNo = (num: number) => {
+    return {
+        peek: () => num,
+        next: () => num++,
+    }
+}
+
 // SECTION: columns adapters
 export const strToDate = (field: Date | string | number | null | undefined) => {
     if (isString(field) || isNumber(field)) return new Date(field);
@@ -40,4 +52,5 @@ export const adaptValue = <
     })
     return adaptedObj;
 }
+
 
