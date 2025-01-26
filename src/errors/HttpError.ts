@@ -47,6 +47,12 @@ export class HttpError extends Error {
     }
 }
 
+export class HttpServerError extends HttpError {
+    constructor(message?: string) {
+        super(HttpErrors.SERVER_ERROR, message)
+    }
+}
+
 export class HttpBadRequest extends HttpError {
     constructor(message?: string) {
         super(HttpErrors.CLIENT_BAD_REQUEST, message)

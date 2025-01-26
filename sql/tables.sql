@@ -92,7 +92,7 @@ create table my_way2.service_deadlines (
 
 create table my_way2.client_services (
     -- service general attributes
-    service_id int,
+    service_id serial,
     service_created_by int,
     service_created_date timestamptz,
     service_status smallint,
@@ -100,8 +100,8 @@ create table my_way2.client_services (
     -- contract specific attributes
     entity_id int,
     service_type_id int,
-    default_service_provider_id int,
-    default_service_staff_id int,
+    default_internal_provider_id int,
+    default_external_provider_id int,
     remarks jsonb,
 
     -- keys

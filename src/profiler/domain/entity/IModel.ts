@@ -34,9 +34,7 @@ export interface IClientModel {
     profileStatus: ProfileStatus
 }
 
-
 export type IEntityModel = IBaseModel 
     & Partial<ICompanyModel> 
     & Partial<IPersonModel> 
     & Partial<IClientModel>
-    & Partial<iClientServices>
