@@ -53,3 +53,10 @@ export enum RelationStatus {
     "KEEP_AS_HISTORY" = 2,
     "REMOVE" = 901,
 };
+
+export enum ClientServiceStatus {
+    "EMPTY" = 0,
+    "ACTIVE" = 1,
+    "PRE_ACTIVATION" = 101,
+    "EXPIRED" = 121,
+}

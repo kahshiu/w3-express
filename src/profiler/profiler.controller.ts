@@ -7,6 +7,8 @@ import { getEntities, createEntity, modifyEntity } from "./entity.service";
 import { selectRelationTypes, upsertRelationType } from "./relationTypes.repository";
 import { RequestHandler, Router } from "express"
 import { deleteEntityRelations } from "./entityRelations.repository";
+import { HttpClientUnprocessableContent } from "@src/errors/HttpError";
+import { patchServiceClients, postServiceClients } from "@src/services/services.controller";
 
 export const registerProfiler = (router: Router) => {
     router.get("/entities", wrapCatcher(getEntitiesRoute));
@@ -28,10 +30,16 @@ export const registerProfiler = (router: Router) => {
     router.patch("/service-provider/company/:id", wrapCatcher(patchEntityRoute(EntityType.SERVICE_PROVIDER_COMPANY)));
     router.patch("/service-provider/person/:id", wrapCatcher(patchEntityRoute(EntityType.SERVICE_PROVIDER_PERSON)));
 
-    // NOTE: 
+    // NOTE: relations types
     router.get("/relation-type", wrapCatcher(getRelationTypes));
     router.post("/relation-type", wrapCatcher(postRelationType));
     router.delete("/relation/:pid-:cid", wrapCatcher(removeEntityRelationRoute));
+
+    // NOTE: services
+    router.post("/client/company/:entityId/services", wrapCatcher(postServiceClients));
+    router.post("/client/person/:entityId/services", wrapCatcher(postServiceClients));
+    router.patch("/client/company/:entityId/services", wrapCatcher(patchServiceClients));
+    router.patch("/client/person/:entityId/services", wrapCatcher(patchServiceClients));
 }
 
 // SECTION: creation block
@@ -93,6 +101,9 @@ const postRelationType: RequestHandler = async (req, resp, next) => {
     const dto = req.body;
     const payload = await wrapTask("upsert relation type", async (client) => {
         const model = relationTypeFromDto(dto as IRelationTypeModel);
+        if (model.relationId <= 0) {
+            throw new HttpClientUnprocessableContent("Validation Error: Invalid relationId")
+        }
         return upsertRelationType(model, { client })
     })
     resp.json({ payload });
