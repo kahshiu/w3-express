@@ -1,11 +1,13 @@
 import { PoolClient } from "pg";
 import { addTaskCustomColumn, dropTaskCustomColumn, getTaskCustomColumns, isColumnPopulated } from "./tasks.repository";
+import { logger } from "@src/logger";
 
 export const createTaskColumn = async (
     columnName: string,
     dataType: string,
     options: { client: PoolClient }
 ) => {
+    logger.info({ columnName, dataType }, "tracing name of new column")
     const existingColumns = await getTaskCustomColumns({
         ...options,
         criteria: { columnNames: [columnName] }

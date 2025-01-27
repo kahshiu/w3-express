@@ -35,7 +35,6 @@ export const getTaskCustomColumns = async (
     const whereClause = whereArr.length > 0 ? `and ${whereArr.join(" and ")}` : "";
 
     const result = await client.query({
-        name: "select task custom columns",
         text: `select column_name, data_type, udt_name 
             from information_schema.columns 
             where table_schema = 'my_way2' 
@@ -54,7 +53,6 @@ export const isColumnPopulated = async (
 ) => {
     const { client } = options;
     const result = await client.query({
-        name: "check task column",
         text: `select ${columnName} from my_way2.entity_tasks where ${columnName} is not null order by task_id limit 3;`
     })
     return result.rows.map((row) => selectTemplate(row));
@@ -76,7 +74,6 @@ export const addTaskCustomColumn = async (
 ) => {
     const { client } = options;
     await client.query({
-        name: "add task column",
         text: `alter table my_way2.entity_tasks add column
             ${sanitizeText(columnName)} 
             ${setColumnTypes(dataType)} 
@@ -90,7 +87,6 @@ export const dropTaskCustomColumn = async (
 ) => {
     const { client } = options;
     await client.query({
-        name: "add task column",
         text: `alter table my_way2.entity_tasks drop column ${sanitizeText(columnName)} `
     })
 }

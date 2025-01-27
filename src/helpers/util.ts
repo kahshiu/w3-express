@@ -19,6 +19,8 @@ export const runningNo = (num: number) => {
     }
 }
 
+export const sanitizeText = (input: string) => input.replace(/[^a-zA-Z0-9]/g, '');
+
 // SECTION: columns adapters
 export const strToDate = (field: Date | string | number | null | undefined) => {
     if (isString(field) || isNumber(field)) return new Date(field);

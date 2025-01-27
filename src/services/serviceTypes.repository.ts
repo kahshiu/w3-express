@@ -1,9 +1,9 @@
 import { selectTemplate, upsertTemplate } from "@src/db/templates";
 import { logger } from "@src/logger";
 import { PoolClient } from "pg";
-import { IServiceTypeSchema } from "./domain/ServiceType";
+import { IServiceType } from "./domain/ServiceType";
 
-export const upsertServiceType = async (data: IServiceTypeSchema, options: { client: PoolClient }) => {
+export const upsertServiceType = async (data: IServiceType, options: { client: PoolClient }) => {
     const { client } = options;
 
     const frags = upsertTemplate(data);
