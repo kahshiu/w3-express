@@ -3,6 +3,21 @@ import { logger } from "@src/logger";
 import { PoolClient } from "pg";
 import { IServiceType } from "./domain/ServiceType";
 
+export const selectServiceTypes = async (options: { 
+    client: PoolClient, 
+}) => {
+    const { client } = options;
+    const records = await client.query({
+        text:
+            `select service_type_id
+                , service_type_name
+                , service_type_description
+                , service_type_grouping
+            from my_way2.service_types`,
+    })
+    return records.rows.map((row) => selectTemplate(row));
+}
+
 export const upsertServiceType = async (data: IServiceType, options: { client: PoolClient }) => {
     const { client } = options;
 
@@ -12,9 +27,9 @@ export const upsertServiceType = async (data: IServiceType, options: { client: P
     const values = frags.map(({ value }) => value)
 
     const targetColumns = [
-        "serviceTypeName", 
-        "serviceTypeDescription", 
-        "serviceTypeGrouping", 
+        "serviceTypeName",
+        "serviceTypeDescription",
+        "serviceTypeGrouping",
         "serviceTypeDeadlines"
     ];
     const updateColumns = frags

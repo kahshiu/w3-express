@@ -60,3 +60,11 @@ export enum ClientServiceStatus {
     "PRE_ACTIVATION" = 101,
     "EXPIRED" = 121,
 }
+
+export enum ClientServiceTaskStatus {
+    "EMPTY" = 0,
+    "NOT_STARTED" = 1,
+    "PENDING" = 101,
+    "COMPLETED" = 201,
+    "KIV" = 211,
+}

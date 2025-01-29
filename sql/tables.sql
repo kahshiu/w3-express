@@ -122,15 +122,18 @@ create table my_way2.entity_tasks (
 
     -- reference keys, duplicate columns for ease of reference
     entity_id int,
-    service_type_id int,
     service_id int,
-    service_name text,
-    service_provider_id int,
-    service_staff_id int,
+    service_type_id int,
+    service_type_name text,
+    service_internal_provider_id int,
+    service_external_provider_id int,
 
     -- workflow
     workflow_history jsonb,
     workflow_current jsonb,
+    constraint pk_entity_tasks primary key (task_id),
+    constraint fk_service_id foreign key (service_id) references my_way2.client_services(service_id)
+);
 
     -- task details
     -- fee_type text,
@@ -182,6 +185,3 @@ create table my_way2.entity_tasks (
     -- invoice_status_code int2,
 
     -- keys
-    constraint pk_entity_tasks primary key (task_id),
-    constraint fk_service_id foreign key (service_id) references my_way2.client_services(service_id)
-);

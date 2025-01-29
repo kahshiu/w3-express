@@ -1,8 +1,8 @@
 import { RequestHandler, Router } from "express";
-import { getTaskCustomColumns } from "./tasks.repository";
+import { selectTaskCustomColumns } from "./tasks.repository";
 import { wrapTask } from "@src/db/PgHelpers";
 import { wrapCatcher } from "@src/helpers/middlewares";
-import { createTaskColumn, removeTaskColumn } from "./tasks.service";
+import { createClientTask, modifyClientTask, createTaskColumn, removeTaskColumn } from "./tasks.service";
 import { HttpBadRequest, HttpClientUnprocessableContent } from "@src/errors/HttpError";
 import { z } from "zod";
 import { DataTypes } from "./domain/ColumnTypes";
@@ -18,10 +18,28 @@ export const registerTasks = (router: Router) => {
 const getTasks: RequestHandler = async (req, resp, next) => {
     const payload = await wrapTask(`get custom columns`, (client) => {
         const { dataTypes } = req.params;
-        return getTaskCustomColumns({
+        return selectTaskCustomColumns({
             client,
             criteria: { dataTypes: dataTypes ? dataTypes.split(",") : [] }
         })
+    })
+    resp.json({ payload })
+}
+
+export const postTask: RequestHandler = async (req, resp, next) => {
+    const data = req.body;
+    const { entityId } = req.params;
+    const payload = await wrapTask(`insert client task`, (client) => {
+        return createClientTask(data, Number(entityId), { client })
+    })
+    resp.json({ payload })
+}
+
+export const patchTask: RequestHandler = async (req, resp, next) => {
+    const data = req.body;
+    const { entityId, taskId } = req.params;
+    const payload = await wrapTask(`modify client task`, (client) => {
+        return modifyClientTask(data, Number(entityId), Number(taskId), { client })
     })
     resp.json({ payload })
 }

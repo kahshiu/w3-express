@@ -9,6 +9,7 @@ import { RequestHandler, Router } from "express"
 import { deleteEntityRelations } from "./entityRelations.repository";
 import { HttpClientUnprocessableContent } from "@src/errors/HttpError";
 import { patchServiceClients, postServiceClients } from "@src/services/services.controller";
+import { postTask, patchTask } from "@src/tasks/tasks.controller";
 
 export const registerProfiler = (router: Router) => {
     router.get("/entities", wrapCatcher(getEntitiesRoute));
@@ -36,10 +37,11 @@ export const registerProfiler = (router: Router) => {
     router.delete("/relation/:pid-:cid", wrapCatcher(removeEntityRelationRoute));
 
     // NOTE: services
-    router.post("/client/company/:entityId/services", wrapCatcher(postServiceClients));
-    router.post("/client/person/:entityId/services", wrapCatcher(postServiceClients));
-    router.patch("/client/company/:entityId/services", wrapCatcher(patchServiceClients));
-    router.patch("/client/person/:entityId/services", wrapCatcher(patchServiceClients));
+    router.post("/client/:entityId/services", wrapCatcher(postServiceClients));
+    router.patch("/client/:entityId/services", wrapCatcher(patchServiceClients));
+
+    router.post("/client/:entityId/tasks", wrapCatcher(postTask));
+    router.patch("/client/:entityId/tasks/:taskId", wrapCatcher(patchTask));
 }
 
 // SECTION: creation block

@@ -3,6 +3,58 @@ import { IServiceClient } from "./domain/ServiceClients";
 import { selectTemplate, upsertTemplate } from "@src/db/templates";
 import { logger } from "@src/logger";
 import { pick } from "es-toolkit/compat";
+import { IServiceType } from "./domain/ServiceType";
+
+interface IClientServiceType extends IServiceType, IServiceClient { };
+
+export const getServiceClient = async (
+    options: {
+        client: PoolClient
+        criteria: {
+            entityId?: number;
+            serviceTypeId?: number;
+        }
+    }
+) => {
+    const {
+        client,
+        criteria: {
+            entityId,
+            serviceTypeId,
+        }
+    } = options
+
+    const whereArr: string[] = [];
+    if (entityId && entityId > 0) { whereArr.push(`entity_id = ${entityId}`) }
+    if (serviceTypeId && serviceTypeId > 0) { whereArr.push(`service_type_id = ${serviceTypeId}`) }
+    const whereClause = whereArr.length > 0 ? `where ${whereArr.join(" and ")}` : "";
+
+    logger.info({ whereClause }, "tracing sql: insert client service")
+    const records = await client.query({
+        text:
+            `select service_id
+                , service_created_by
+                , service_created_date
+                , service_status
+                , entity_id
+
+                , ct.service_type_id
+                , ct.service_type_name
+                , ct.service_type_name
+                , ct.service_type_description
+                , ct.service_type_grouping
+
+                , default_internal_provider_id
+                , default_external_provider_id
+                , remarks
+
+            from my_way2.client_services cs 
+            inner join my_way2.service_types ct on ct.service_type_id = cs.service_type_id
+            ${whereClause}`,
+    })
+    const models = records.rows.map((row) => selectTemplate(row));
+    return models as IClientServiceType[];
+}
 
 export const insertServiceClient = async (data: IServiceClient, options: { client: PoolClient }) => {
     const { client } = options;
@@ -51,8 +103,8 @@ export const updateServiceClient = async (
     const { client, criteria: { serviceId, entityId, serviceTypeId } } = options;
 
     const excludeColumns = [
-        "serviceStatus", 
-        "defaultInternalProviderId", 
+        "serviceStatus",
+        "defaultInternalProviderId",
         "defaultExternalProviderId",
         "remarks",
     ];
