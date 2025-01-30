@@ -36,7 +36,7 @@ export const upsertServiceType = async (data: IServiceType, options: { client: P
         .filter(({ columnOrig }) => targetColumns.includes(columnOrig))
         .map(({ updateExcludedColumn }) => updateExcludedColumn).join(",")
 
-    logger.info({ columns, placeholders, values, updateColumns }, "tracing sql: insert relation types")
+    logger.info({ columns, placeholders, values, updateColumns }, "tracing sql: insert service types")
     const records = await client.query({
         text:
             `insert into my_way2.service_types (

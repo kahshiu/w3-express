@@ -51,6 +51,15 @@ export const selectTaskCustomColumns = async (
     return result.rows.map((row) => selectTemplate(row));
 }
 
+export const setColumnTypes = (dataType: string) => {
+    let dt = ColumnTypes[dataType];
+    if (dt === "money") dt = "decimal(10,2)"
+    if (dt === undefined) {
+        throw new HttpClientUnprocessableContent("Invalid datatype")
+    }
+    return dt;
+}
+
 export const isColumnPopulated = async (
     columnName: string,
     options: { client: PoolClient }
@@ -60,15 +69,6 @@ export const isColumnPopulated = async (
         text: `select ${columnName} from my_way2.entity_tasks where ${columnName} is not null order by task_id limit 3;`
     })
     return result.rows.map((row) => selectTemplate(row));
-}
-
-export const setColumnTypes = (dataType: string) => {
-    let dt = ColumnTypes[dataType];
-    if (dt === "money") dt = "decimal(10,2)"
-    if (dt === undefined) {
-        throw new HttpClientUnprocessableContent("Invalid datatype")
-    }
-    return dt;
 }
 
 export const addTaskCustomColumn = async (
@@ -137,7 +137,6 @@ export const insertTask = async (
     data: IServiceTaskSchema,
     options: { client: PoolClient }
 ) => {
-    console.log(data);
     const { client } = options;
     const excludeColumns = ["taskId"]
 

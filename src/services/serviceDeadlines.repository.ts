@@ -19,9 +19,8 @@ export const upsertServiceDeadline = async (data: IServiceDeadline, options: { c
         .filter(({ columnOrig }) => targetColumns.includes(columnOrig))
         .map(({ updateExcludedColumn }) => updateExcludedColumn).join(",")
 
-    logger.info({ columns, placeholders, updateExcludedColumns }, "tracing sql: insert relation types")
+    logger.info({ columns, placeholders, updateExcludedColumns }, "tracing sql: insert deadlines")
     const result = await client.query({
-        name: "insert relation types",
         text:
             `insert into my_way2.service_deadlines (
                 ${columns}
@@ -47,6 +46,20 @@ export const deleteServiceDeadlines = async (
         values: [
             serviceTypeId,
             deadlineIds.join(",")
+        ],
+    })
+}
+
+export const deleteServiceDeadlinesByName = async (
+    deadlineName: string,
+    options: { client: PoolClient }
+) => {
+    const { client } = options;
+    await client.query({
+        name: "delete relation types",
+        text: "delete from my_way2.service_deadlines where deadline_id in ( $2 )",
+        values: [
+            deadlineName,
         ],
     })
 }

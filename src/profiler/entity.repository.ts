@@ -72,8 +72,8 @@ export const selectEntities = async (options: {
     selectColumns: string[],
     criteria: {
         includeIds: number[],
-        entityClass: EntityClass,
-        entityTypePrimary: PrimaryType
+        entityClass?: EntityClass,
+        entityTypePrimary?: PrimaryType
     },
 }) => {
     const { client, selectColumns, criteria: { includeIds, entityClass, entityTypePrimary } } = options;
@@ -82,8 +82,8 @@ export const selectEntities = async (options: {
     if (includeIds.length > 0) {
         whereArr.push(`entity_id in (${includeIds})`)
     }
-    whereArr.push(`entity_class = ${entityClass}`)
-    whereArr.push(`entity_type_primary = ${entityTypePrimary}`)
+    if (entityClass) whereArr.push(`entity_class = ${entityClass}`)
+    if (entityTypePrimary) whereArr.push(`entity_type_primary = ${entityTypePrimary}`)
     const whereClause = whereArr.length > 0 ? `where ${whereArr.join(" and ")}` : "";
 
     logger.info({ selectColumns, whereArr }, `check entity model`);

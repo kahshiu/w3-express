@@ -1,8 +1,8 @@
 import { RequestHandler, Router } from "express";
 import { selectTaskCustomColumns } from "./tasks.repository";
-import { wrapTask } from "@src/db/PgHelpers";
+import { wrapTask, wrapTrx } from "@src/db/PgHelpers";
 import { wrapCatcher } from "@src/helpers/middlewares";
-import { createClientTask, modifyClientTask, createTaskColumn, removeTaskColumn } from "./tasks.service";
+import { createClientTask, modifyClientTask, createTaskColumn, removeTaskColumn, applyDeadline } from "./tasks.service";
 import { HttpBadRequest, HttpClientUnprocessableContent } from "@src/errors/HttpError";
 import { z } from "zod";
 import { DataTypes } from "./domain/ColumnTypes";
@@ -13,6 +13,7 @@ export const registerTasks = (router: Router) => {
 
     router.post("/tasks/custom-columns/:columnName/:dataType", wrapCatcher(addCustomColumn));
     router.delete("/tasks/custom-columns/:columnName", wrapCatcher(deleteCustomColumn));
+    router.patch("/tasks/:taskId/deadlines", wrapCatcher(patchTaskDeadline));
 }
 
 const getTasks: RequestHandler = async (req, resp, next) => {
@@ -69,11 +70,17 @@ const deleteCustomColumn: RequestHandler = async (req, resp, next) => {
     z.object({ columnName: z.string() }).parse({ columnName });
 
     const payload = await wrapTask(`remove custom columns`, (client) => {
-        return removeTaskColumn(
-            columnName,
-            { client }
-        )
+        return removeTaskColumn(columnName, { client, syncDropDeadlines: true })
     })
     if (payload === false) throw new HttpBadRequest("Column contains data")
+    resp.json({ payload })
+}
+
+const patchTaskDeadline: RequestHandler = async (req, resp, next) => {
+    const { taskId } = req.params;
+    const payload = await wrapTrx(`remove custom columns`, (client) => {
+        return applyDeadline(Number(taskId), { client })
+    })
+    if (payload === false) throw new HttpBadRequest();
     resp.json({ payload })
 }
