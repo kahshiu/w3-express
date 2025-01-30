@@ -7,6 +7,7 @@ import { HttpServerError } from "@src/errors/HttpError"
 import { logger } from "@src/logger"
 import { intervalFromColumn, intervalToColumn } from "@src/helpers/common/IInterval"
 import { createTaskColumn, removeTaskColumn } from "@src/tasks/tasks.service"
+import { wrapTask } from "@src/db/PgHelpers"
 
 export const modifyEntireServiceType = async (
     dto: ServiceTypeSchema,
@@ -38,7 +39,9 @@ export const modifyEntireServiceType = async (
     logger.info(dlSetToUpdate, "tracing set to update");
 
     if (dlSetOldRemove.length > 0) {
-        await removeDeadlines(serviceTypeId, dlSetOldRemove as IServiceDeadline[], options);
+        await wrapTask("insert service types", async (client) => {
+            await removeDeadlines(serviceTypeId, dlSetOldRemove as IServiceDeadline[], { client });
+        })
     }
 
     let dlMod: IServiceDeadline[] = [];
@@ -106,6 +109,8 @@ export const removeDeadlines = async (
     const deadlineNames = deadlines.map((d) => d.deadlineName);
 
     await deleteServiceDeadlines(serviceTypeId, deadlineIds, options);
-    const removePromises = deadlineNames.map((d) => removeTaskColumn(d, options));
+    const removePromises = deadlineNames.map((d) => 
+        removeTaskColumn(d, {...options, syncDropDeadlines: false})
+    );
     await Promise.all(removePromises);
 }

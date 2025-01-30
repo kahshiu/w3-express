@@ -1,5 +1,6 @@
+import { HttpBadRequest } from "@src/errors/HttpError";
 import { IntervalSchema } from "@src/helpers/common/IInterval";
-import PostgresInterval from "postgres-interval";
+import { logger } from "@src/logger";
 import { z } from "zod";
 
 export const ServiceDeadlineSchema = z.object({
@@ -19,9 +20,15 @@ export interface IServiceDeadline {
     serviceTypeId: number,
 }
 
-export const serviceDeadlineFromDto = (dto: ServiceDeadlineSchema, serviceTypeId: number) => {
+export const serviceDeadlineFromDto = (input: ServiceDeadlineSchema, serviceTypeId: number) => {
+    try {
+        ServiceDeadlineSchema.parse(input);
+    } catch (err) {
+        logger.warn(err, "Service deadline validation error.");
+        throw new HttpBadRequest("Service deadline validation error.");
+    }
     return {
-        ...dto,
+        ...input,
         serviceTypeId,
     } as IServiceDeadline
 }

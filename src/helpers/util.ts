@@ -18,6 +18,7 @@ export const runningNo = (num: number) => {
         next: () => num++,
     }
 }
+export type runningNoResult = ReturnType<typeof runningNo>
 
 export const sanitizeText = (input: string) => input.replace(/[^a-zA-Z0-9]/g, '');
 

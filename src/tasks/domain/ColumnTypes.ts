@@ -13,3 +13,9 @@ export const DataTypes = [
     "text",
     "money",
 ] as const
+
+export interface ColumnDefinition {
+    columnName: string,
+    dataType: string,
+    udtName: string,
+}

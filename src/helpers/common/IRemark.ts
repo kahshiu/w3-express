@@ -6,6 +6,6 @@ export const RemarkSchema = z.object({
 })
 
 export interface Remark {
-    date: string | Date;
+    date: string;
     content: string;
 }
