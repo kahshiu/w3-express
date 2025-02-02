@@ -3,7 +3,9 @@ import {
     EntityStatus, 
     IcType, 
     ProfileStatus, 
-    RelationStatus 
+    RelationStatus, 
+    EntityClass,
+    PrimaryType
 } from "@src/helpers/enums";
 import { z } from "zod";
 
@@ -11,8 +13,8 @@ import { z } from "zod";
 export const BaseSchema = z.object({
     entityId: z.number().optional(),
     entityName: z.string(),
-    // entityClass: z.nativeEnum(EntityClass).optional(),
-    // entityTypePrimary: z.nativeEnum(PrimaryType).optional(),
+    entityClass: z.nativeEnum(EntityClass).optional(),
+    entityTypePrimary: z.nativeEnum(PrimaryType).optional(),
     entityTypeSecondary: z.nativeEnum(SecondaryType).optional(),
     entityStatus: z.nativeEnum(EntityStatus),
 })

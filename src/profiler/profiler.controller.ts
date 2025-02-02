@@ -3,17 +3,20 @@ import { EntityType } from "@src/helpers/enums";
 import { wrapCatcher } from "@src/helpers/middlewares";
 import { logger } from "@src/logger";
 import { IRelationTypeModel, relationTypeFromDto } from "./domain/RelationType";
-import { getEntities, createEntity, modifyEntity } from "./entity.service";
+import { getEntities, createEntity, modifyEntity, determineEntityType } from "./entity.service";
 import { selectRelationTypes, upsertRelationType } from "./relationTypes.repository";
 import { RequestHandler, Router } from "express"
 import { deleteEntityRelations } from "./entityRelations.repository";
 import { HttpClientUnprocessableContent } from "@src/errors/HttpError";
 import { patchServiceClients, postServiceClients } from "@src/services/services.controller";
 import { postTask, patchTask } from "@src/tasks/tasks.controller";
+import { IEntityDto } from "./domain/entity/IDto";
 
 export const registerProfiler = (router: Router) => {
     router.get("/entities", wrapCatcher(getEntitiesRoute));
     router.get("/entities/:ids", wrapCatcher(getEntitiesByIdRoute));
+    router.post("/entity", wrapCatcher(createEntityBase));
+    router.patch("/entity/:id", wrapCatcher(patchEntityBase));
 
     // NOTE: creation
     router.post("/master/company", wrapCatcher(createEntityRoute(EntityType.MASTER_COMPANY)));
@@ -45,6 +48,29 @@ export const registerProfiler = (router: Router) => {
 }
 
 // SECTION: creation block
+const createEntityBase: RequestHandler = async (req, resp, next) => {
+    const dto = req.body as IEntityDto;
+    const entityType = determineEntityType(dto) as EntityType;
+    const payload = await wrapTrx(`insert wrapper for ${entityType}`, async (client) => {
+        const data = await createEntity(entityType, dto, { client });
+        return data;
+    })
+    resp.json({ payload });
+}
+
+const patchEntityBase: RequestHandler = async (req, resp, next) => {
+    const { id } = req.params;
+    const data = req.body;
+    const entityId = Number(id);
+    const entityType = determineEntityType(data) as EntityType;
+
+    const payload = await wrapTrx(`patch wraper for ${entityType}`, (client) => {
+        return modifyEntity(entityType, { ...data, entityId }, { client })
+    })
+
+    resp.json({ payload });
+}
+
 const createEntityRoute = (entityType: EntityType): RequestHandler => async (req, resp, next) => {
     const dto = req.body;
 

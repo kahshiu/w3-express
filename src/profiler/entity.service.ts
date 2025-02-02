@@ -1,4 +1,4 @@
-import { EntityType } from "@src/helpers/enums";
+import { EntityClass, EntityType, PrimaryType } from "@src/helpers/enums";
 import { PoolClient } from "pg";
 import { insertEntity, selectEntities, updateEntity } from "./entity.repository";
 import { entitySpecs } from "./domain/entity/Config";
@@ -6,6 +6,17 @@ import { entityFromDto } from "./domain/entity/Entity";
 import { IEntityDto } from "./domain/entity/IDto";
 import { IRelationModel, relationfromEntityDto, relationfromEntityModel } from "./domain/EntityRelation";
 import { upsertEntityRelation } from "./entityRelations.repository";
+
+export const determineEntityType = (dto: IEntityDto) => {
+    const { entityClass, entityTypePrimary } = dto;
+    console.log("tracing details", entityClass, entityTypePrimary)
+    if(entityClass === EntityClass.MASTER && entityTypePrimary === PrimaryType.COMPANY) return EntityType.MASTER_COMPANY;
+    if(entityClass === EntityClass.MASTER && entityTypePrimary === PrimaryType.PERSONAL) return EntityType.MASTER_PERSON;
+    if(entityClass === EntityClass.CLIENT && entityTypePrimary === PrimaryType.COMPANY) return EntityType.CLIENT_COMPANY;
+    if(entityClass === EntityClass.CLIENT && entityTypePrimary === PrimaryType.PERSONAL) return EntityType.CLIENT_PERSON;
+    if(entityClass === EntityClass.SERVICE_PROVIDER && entityTypePrimary === PrimaryType.COMPANY) return EntityType.SERVICE_PROVIDER_COMPANY;
+    if(entityClass === EntityClass.SERVICE_PROVIDER && entityTypePrimary === PrimaryType.PERSONAL) return EntityType.SERVICE_PROVIDER_PERSON;
+}
 
 export const createEntity = async (
     entityType: EntityType,
@@ -32,7 +43,8 @@ export const createEntity = async (
     const pModel = parents as unknown as IRelationModel[]
 
     const relations = relationfromEntityModel(cModel, pModel)
-    return { ...entities, ...relations };
+    const firstEntity = entities[0] 
+    return { ...firstEntity, ...relations };
 }
 
 export const modifyEntity = async (
@@ -70,7 +82,8 @@ export const modifyEntity = async (
     const pModel = parents as unknown as IRelationModel[]
 
     const relations = relationfromEntityModel(cModel, pModel)
-    return { ...entities, ...relations };
+    const firstEntity = entities[0]
+    return { ...firstEntity, ...relations };
 }
 
 const getEntity = async (

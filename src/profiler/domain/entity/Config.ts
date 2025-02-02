@@ -94,7 +94,7 @@ export const entitySpecs = {
             ...entityFragments.client.toDtoAdapter,
         },
         enforceDefaults: <Model extends IBaseModel>(model: Model) => {
-            model.entityClass = EntityClass.SERVICE_PROVIDER
+            model.entityClass = EntityClass.MASTER
             model.entityTypePrimary = PrimaryType.COMPANY
         },
     },
@@ -123,7 +123,7 @@ export const entitySpecs = {
             ...entityFragments.client.toDtoAdapter,
         },
         enforceDefaults: <Model extends IBaseModel>(model: Model) => {
-            model.entityClass = EntityClass.SERVICE_PROVIDER
+            model.entityClass = EntityClass.MASTER
             model.entityTypePrimary = PrimaryType.PERSONAL
         },
     },
