@@ -54,6 +54,7 @@ export const modifyEntity = async (
         client: PoolClient
     }
 ) => {
+    console.log("tracing something",dto, entityType);
     const entityModel = entityFromDto(entityType, dto);
     const { entityId, entityClass, entityTypePrimary } = entityModel
     const { childrenModel, parentsModel } = relationfromEntityDto(dto);
